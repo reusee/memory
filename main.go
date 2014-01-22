@@ -148,10 +148,13 @@ func main() {
 			from := mem.Concepts[connect.From]
 			switch from.What {
 			case AUDIO: // play audio
+				termbox.SetCell(0, 0, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.Flush()
 				from.Play()
+				termbox.SetCell(0, 0, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.Flush()
 			repeat:
 				ev := termbox.PollEvent()
-				termbox.Flush()
 				switch ev.Key {
 				case termbox.KeyEnter:
 					connect.Level++
