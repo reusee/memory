@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os/exec"
+	"path/filepath"
 )
 
 const (
-	SOUND = iota
+	AUDIO = iota
 	WORD
 	SENTENCE
 )
@@ -23,9 +25,14 @@ func (self *Concept) Key() string {
 	switch self.What {
 	case WORD, SENTENCE:
 		return fmt.Sprintf("text\t%d", self.Serial)
-	case SOUND:
+	case AUDIO:
 		return fmt.Sprintf("file\t%s", self.FileHash)
 	default:
 		panic("not here")
 	}
+}
+
+func (self *Concept) Play() {
+	cmd := exec.Command("/usr/bin/env", "mplayer", filepath.Join(rootPath, "files", self.File))
+	cmd.Run()
 }

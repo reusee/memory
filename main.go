@@ -5,13 +5,35 @@ import (
 	"encoding/ascii85"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
+	"time"
+
+	termbox "github.com/nsf/termbox-go"
 )
 
 var rootPath string
+
+var LevelTime = []time.Duration{
+	0,
+	time.Minute * 30,
+	time.Hour * 24,
+	time.Hour * 24 * 2,
+	time.Hour * 24 * 4,
+	time.Hour * 24 * 8,
+	time.Hour * 24 * 16,
+	time.Hour * 24 * 32,
+	time.Hour * 24 * 64,
+	time.Hour * 24 * 128,
+	time.Hour * 24 * 256,
+	time.Hour * 24 * 512,
+	time.Hour * 24 * 1024,
+	time.Hour * 24 * 2048,
+}
 
 func init() {
 	_, rootPath, _, _ = runtime.Caller(0)
@@ -67,7 +89,7 @@ func main() {
 			l := ascii85.Encode(buf, hasher.Sum(nil))
 
 			concept := &Concept{
-				What:     SOUND,
+				What:     AUDIO,
 				File:     f,
 				FileHash: string(buf[:l]),
 			}
@@ -99,8 +121,96 @@ func main() {
 		fmt.Printf("%d concepts, %d connects\n", len(mem.Concepts), len(mem.Connects))
 		mem.Save()
 
+	case "train":
+		// get connects
+		var connects []*Connect
+		for _, connect := range mem.Connects {
+			from := mem.Concepts[connect.From]
+			if (from.What == WORD || from.What == SENTENCE) && from.Incomplete {
+				continue
+			}
+			if connect.LevelUpTime.Add(LevelTime[connect.Level]).After(time.Now()) {
+				continue
+			}
+			connects = append(connects, connect)
+		}
+		// sort
+		sort.Sort(ConnectSorter{connects, mem})
+		fmt.Printf("%d to train\n", len(connects))
+		// train
+		err := termbox.Init()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer termbox.Close()
+		for _, connect := range connects {
+			from := mem.Concepts[connect.From]
+			switch from.What {
+			case AUDIO: // play audio
+				from.Play()
+			repeat:
+				ev := termbox.PollEvent()
+				termbox.Flush()
+				switch ev.Key {
+				case termbox.KeyEnter:
+					connect.Level++
+					connect.LevelUpTime = time.Now()
+					mem.Save()
+				case termbox.KeyArrowLeft:
+					connect.Level = 1
+					connect.LevelUpTime = time.Now()
+					mem.Save()
+				case termbox.KeyEsc:
+					return
+				default:
+					from.Play()
+					goto repeat
+				}
+				//TODO complete if Incomplete
+			default:
+				panic("fixme") //TODO
+			}
+		}
+
 	default:
 		fmt.Printf("unknown command\n")
 		os.Exit(0)
 	}
+}
+
+type ConnectSorter struct {
+	l []*Connect
+	m *Memory
+}
+
+func (self ConnectSorter) Len() int {
+	return len(self.l)
+}
+func (self ConnectSorter) Less(i, j int) bool {
+	left := self.l[i]
+	leftFrom := self.m.Concepts[left.From]
+	leftTo := self.m.Concepts[left.To]
+	right := self.l[j]
+	rightFrom := self.m.Concepts[right.From]
+	rightTo := self.m.Concepts[right.To]
+	ltext, laudio := leftFrom, leftTo
+	if leftFrom.What == AUDIO {
+		ltext, laudio = leftTo, leftFrom
+	}
+	rtext, raudio := rightFrom, rightTo
+	if rightFrom.What == AUDIO {
+		rtext, raudio = rightTo, rightFrom
+	}
+	if ltext.What == rtext.What {
+		return laudio.File < raudio.File
+	} else {
+		if ltext.What == WORD && rtext.What == SENTENCE {
+			return true
+		} else {
+			return false
+		}
+	}
+}
+func (self ConnectSorter) Swap(i, j int) {
+	self.l[i], self.l[j] = self.l[j], self.l[i]
 }

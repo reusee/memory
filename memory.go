@@ -114,5 +114,4 @@ func (self *Memory) Load() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("load %d concepts, %d connects\n", len(self.Concepts), len(self.Connects))
 }
