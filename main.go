@@ -149,6 +149,7 @@ func main() {
 			switch from.What {
 			case AUDIO: // play audio
 				termbox.SetCell(0, 0, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(0, 1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				from.Play()
 				termbox.SetCell(0, 0, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
