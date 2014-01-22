@@ -148,13 +148,13 @@ func main() {
 			from := mem.Concepts[connect.From]
 			switch from.What {
 			case AUDIO: // play audio
+			repeat:
 				termbox.SetCell(0, 0, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.SetCell(0, 1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				from.Play()
 				termbox.SetCell(0, 0, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
-			repeat:
 				ev := termbox.PollEvent()
 				switch ev.Key {
 				case termbox.KeyEnter:
@@ -168,19 +168,86 @@ func main() {
 				case termbox.KeyEsc:
 					return
 				default:
-					from.Play()
 					goto repeat
 				}
-				//TODO complete if Incomplete
+
+			case WORD: // show text
+				termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+				p(0, 0, from.Text)
+				termbox.SetCell(0, 1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.PollEvent()
+				to := mem.Concepts[connect.To]
+			repeat2:
+				termbox.SetCell(0, 2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.Flush()
+				to.Play()
+				termbox.SetCell(0, 2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.Flush()
+				ev := termbox.PollEvent()
+				switch ev.Key {
+				case termbox.KeyEnter:
+					connect.Level++
+					connect.LevelUpTime = time.Now()
+					mem.Save()
+				case termbox.KeyArrowLeft:
+					connect.Level = 1
+					connect.LevelUpTime = time.Now()
+					mem.Save()
+				case termbox.KeyEsc:
+					return
+				default:
+					goto repeat2
+				}
 			default:
 				panic("fixme") //TODO
 			}
+		}
+
+	case "complete":
+		for _, connect := range mem.Connects {
+			from := mem.Concepts[connect.From]
+			if !from.Incomplete && from.Text != "" {
+				continue
+			}
+			if from.What != WORD {
+				continue
+			}
+			to := mem.Concepts[connect.To]
+			fmt.Printf("%s\n", to.File)
+			to.Play()
+			fmt.Scanf("%s\n", &from.Text)
+			from.Incomplete = false
+			mem.Save()
 		}
 
 	default:
 		fmt.Printf("unknown command\n")
 		os.Exit(0)
 	}
+}
+
+func p(x, y int, text string) {
+	for _, r := range text {
+		termbox.SetCell(x, y, r, termbox.ColorDefault, termbox.ColorDefault)
+		x += wcwidth(r)
+	}
+	termbox.Flush()
+}
+
+func wcwidth(r rune) int {
+	if r >= 0x1100 &&
+		(r <= 0x115f || r == 0x2329 || r == 0x232a ||
+			(r >= 0x2e80 && r <= 0xa4cf && r != 0x303f) ||
+			(r >= 0xac00 && r <= 0xd7a3) ||
+			(r >= 0xf900 && r <= 0xfaff) ||
+			(r >= 0xfe30 && r <= 0xfe6f) ||
+			(r >= 0xff00 && r <= 0xff60) ||
+			(r >= 0xffe0 && r <= 0xffe6) ||
+			(r >= 0x20000 && r <= 0x2fffd) ||
+			(r >= 0x30000 && r <= 0x3fffd)) {
+		return 2
+	}
+	return 1
 }
 
 type ConnectSorter struct {
