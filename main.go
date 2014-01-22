@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -201,14 +202,22 @@ func (self ConnectSorter) Less(i, j int) bool {
 	if rightFrom.What == AUDIO {
 		rtext, raudio = rightTo, rightFrom
 	}
-	if ltext.What == rtext.What {
-		return laudio.File < raudio.File
-	} else {
-		if ltext.What == WORD && rtext.What == SENTENCE {
-			return true
+	if left.Level == right.Level {
+		if left.Level == 0 {
+			if ltext.What == rtext.What {
+				return laudio.File < raudio.File
+			} else {
+				if ltext.What == WORD && rtext.What == SENTENCE {
+					return true
+				} else {
+					return false
+				}
+			}
 		} else {
-			return false
+			return rand.Intn(2) == 0
 		}
+	} else {
+		return left.Level > right.Level
 	}
 }
 func (self ConnectSorter) Swap(i, j int) {
