@@ -11,6 +11,14 @@ import (
 	"strings"
 )
 
+var rootPath string
+
+func init() {
+	_, rootPath, _, _ = runtime.Caller(0)
+	rootPath, _ = filepath.Abs(rootPath)
+	rootPath = filepath.Dir(rootPath)
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Printf("no command\n")
@@ -21,6 +29,7 @@ func main() {
 		Concepts: make(map[string]*Concept),
 		Connects: make(map[string]*Connect),
 	}
+	mem.Load()
 
 	cmd := os.Args[1]
 	switch cmd {
@@ -41,9 +50,7 @@ func main() {
 			os.Exit(0)
 		}
 
-		_, p, _, _ := runtime.Caller(0)
-		p, _ = filepath.Abs(p)
-		p = filepath.Join(filepath.Dir(p), "files")
+		p := filepath.Join(rootPath, "files")
 		fmt.Printf("files directory: %s\n", p)
 
 		hasher := sha512.New()
@@ -90,6 +97,7 @@ func main() {
 
 		// show stat
 		fmt.Printf("%d concepts, %d connects\n", len(mem.Concepts), len(mem.Connects))
+		mem.Save()
 
 	default:
 		fmt.Printf("unknown command\n")
