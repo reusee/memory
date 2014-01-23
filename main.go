@@ -111,10 +111,12 @@ func main() {
 					From: concept.Key(),
 					To:   textConcept.Key(),
 				})
-				mem.AddConnect(&Connect{
-					From: textConcept.Key(),
-					To:   concept.Key(),
-				})
+				if what == WORD {
+					mem.AddConnect(&Connect{
+						From: textConcept.Key(),
+						To:   concept.Key(),
+					})
+				}
 			}
 		}
 
@@ -150,11 +152,11 @@ func main() {
 			switch from.What {
 			case AUDIO: // play audio
 			repeat:
-				termbox.SetCell(width / 3, height / 2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
-				termbox.SetCell(width / 3, height / 2 + 1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width/3, height/2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width/3, height/2+1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				from.Play()
-				termbox.SetCell(width / 3, height / 2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width/3, height/2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				ev := termbox.PollEvent()
 				switch ev.Key {
@@ -174,15 +176,15 @@ func main() {
 
 			case WORD: // show text
 				termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-				p(width / 3, height / 2, from.Text)
-				termbox.SetCell(width / 3, height / 2 + 1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
+				p(width/3, height/2, from.Text)
+				termbox.SetCell(width/3, height/2+1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.PollEvent()
 				to := mem.Concepts[connect.To]
 			repeat2:
-				termbox.SetCell(width / 3, height / 2 + 2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width/3, height/2+2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				to.Play()
-				termbox.SetCell(width / 3, height / 2 + 2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width/3, height/2+2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				ev := termbox.PollEvent()
 				switch ev.Key {
@@ -219,6 +221,35 @@ func main() {
 			fmt.Scanf("%s\n", &from.Text)
 			from.Incomplete = false
 			mem.Save()
+		}
+
+	case "stat":
+		// concepts
+		var total, word, sen, audio int
+		for _, concept := range mem.Concepts {
+			total++
+			switch concept.What {
+			case WORD:
+				word++
+			case SENTENCE:
+				sen++
+			case AUDIO:
+				audio++
+			}
+		}
+		fmt.Printf("%d concepts\n", total)
+		fmt.Printf("%d words\n", word)
+		fmt.Printf("%d sentences\n", sen)
+		fmt.Printf("%d audios\n", audio)
+		fmt.Printf("\n")
+
+		// connectes
+		c := make(map[int]int)
+		for _, conn := range mem.Connects {
+			c[conn.Level]++
+		}
+		for level, count := range c {
+			fmt.Printf("%d %d %v\n", level, count, LevelTime[level])
 		}
 
 	default:
