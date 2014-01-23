@@ -21,7 +21,7 @@ var rootPath string
 
 var LevelTime = []time.Duration{
 	0,
-	time.Minute * 30,
+	time.Minute * 10,
 	time.Hour * 24,
 	time.Hour * 24 * 2,
 	time.Hour * 24 * 4,
@@ -144,16 +144,17 @@ func main() {
 			log.Fatal(err)
 		}
 		defer termbox.Close()
+		width, height := termbox.Size()
 		for _, connect := range connects {
 			from := mem.Concepts[connect.From]
 			switch from.What {
 			case AUDIO: // play audio
 			repeat:
-				termbox.SetCell(0, 0, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
-				termbox.SetCell(0, 1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width / 3, height / 2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width / 3, height / 2 + 1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				from.Play()
-				termbox.SetCell(0, 0, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width / 3, height / 2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				ev := termbox.PollEvent()
 				switch ev.Key {
@@ -173,15 +174,15 @@ func main() {
 
 			case WORD: // show text
 				termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-				p(0, 0, from.Text)
-				termbox.SetCell(0, 1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
+				p(width / 3, height / 2, from.Text)
+				termbox.SetCell(width / 3, height / 2 + 1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.PollEvent()
 				to := mem.Concepts[connect.To]
 			repeat2:
-				termbox.SetCell(0, 2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width / 3, height / 2 + 2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				to.Play()
-				termbox.SetCell(0, 2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width / 3, height / 2 + 2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				ev := termbox.PollEvent()
 				switch ev.Key {
