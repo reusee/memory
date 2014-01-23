@@ -147,8 +147,16 @@ func main() {
 		}
 		defer termbox.Close()
 		width, height := termbox.Size()
-		for _, connect := range connects {
+		t0 := time.Now()
+		for i, connect := range connects {
+			if i > 100 || time.Now().Sub(t0) > time.Minute * 10 {
+				break
+			}
+			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+			p(0, 0, fmt.Sprintf("%v", time.Now().Sub(t0)))
+			p(0, 1, fmt.Sprintf("%d", i))
 			from := mem.Concepts[connect.From]
+			to := mem.Concepts[connect.To]
 			switch from.What {
 			case AUDIO: // play audio
 			repeat:
@@ -158,6 +166,10 @@ func main() {
 				from.Play()
 				termbox.SetCell(width/3, height/2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
+				if to.What == WORD {
+					termbox.PollEvent()
+				}
+				p(width/3, height/2+2, "=>"+to.Text)
 				ev := termbox.PollEvent()
 				switch ev.Key {
 				case termbox.KeyEnter:
@@ -175,8 +187,7 @@ func main() {
 				}
 
 			case WORD: // show text
-				termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-				p(width/3, height/2, from.Text)
+				p(width/3, height/2, "=>"+from.Text)
 				termbox.SetCell(width/3, height/2+1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.PollEvent()
 				to := mem.Concepts[connect.To]
@@ -307,6 +318,9 @@ func (self ConnectSorter) Less(i, j int) bool {
 	}
 	if left.Level == right.Level {
 		if left.Level == 0 {
+			if leftFrom.What == AUDIO && rightFrom.What != AUDIO {
+				return true
+			}
 			if ltext.What == rtext.What {
 				return laudio.File < raudio.File
 			} else {
