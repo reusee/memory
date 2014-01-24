@@ -108,13 +108,15 @@ func main() {
 				mem.AddConcept(textConcept)
 				// add connect
 				mem.AddConnect(&Connect{
-					From: concept.Key(),
-					To:   textConcept.Key(),
+					From:        concept.Key(),
+					To:          textConcept.Key(),
+					LevelUpTime: time.Now(),
 				})
 				if what == WORD {
 					mem.AddConnect(&Connect{
-						From: textConcept.Key(),
-						To:   concept.Key(),
+						From:        textConcept.Key(),
+						To:          concept.Key(),
+						LevelUpTime: time.Now(),
 					})
 				}
 			}
@@ -149,7 +151,9 @@ func main() {
 		width, height := termbox.Size()
 		t0 := time.Now()
 		for i, connect := range connects {
-			if i > 100 || time.Now().Sub(t0) > time.Minute * 10 {
+			//connect.Dump(mem)
+			//continue
+			if i > 100 || time.Now().Sub(t0) > time.Minute*10 {
 				break
 			}
 			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
@@ -301,42 +305,37 @@ type ConnectSorter struct {
 func (self ConnectSorter) Len() int {
 	return len(self.l)
 }
-func (self ConnectSorter) Less(i, j int) bool {
-	left := self.l[i]
-	leftFrom := self.m.Concepts[left.From]
-	leftTo := self.m.Concepts[left.To]
-	right := self.l[j]
-	rightFrom := self.m.Concepts[right.From]
-	rightTo := self.m.Concepts[right.To]
-	ltext, laudio := leftFrom, leftTo
-	if leftFrom.What == AUDIO {
-		ltext, laudio = leftTo, leftFrom
+
+func (self ConnectSorter) pri(connect *Connect) int {
+	if connect.Level > 0 {
+		return connect.Level*(-1000) - rand.Intn(1000)
 	}
-	rtext, raudio := rightFrom, rightTo
-	if rightFrom.What == AUDIO {
-		rtext, raudio = rightTo, rightFrom
-	}
-	if left.Level == right.Level {
-		if left.Level == 0 {
-			if leftFrom.What == AUDIO && rightFrom.What != AUDIO {
-				return true
-			}
-			if ltext.What == rtext.What {
-				return laudio.File < raudio.File
-			} else {
-				if ltext.What == WORD && rtext.What == SENTENCE {
-					return true
-				} else {
-					return false
-				}
-			}
-		} else {
-			return rand.Intn(2) == 0
+
+	n := 0
+	from := self.m.Concepts[connect.From]
+	to := self.m.Concepts[connect.To]
+
+	if from.What == WORD {
+		n += 200
+	} else if from.What == SENTENCE {
+		n += 400
+	} else if from.What == AUDIO {
+		if to.What == SENTENCE {
+			n += 100
 		}
-	} else {
-		return left.Level > right.Level
 	}
+
+	return n
 }
+
+func (self ConnectSorter) Less(i, j int) bool {
+	x, y := self.pri(self.l[i]), self.pri(self.l[j])
+	if x == y {
+		return self.l[i].LevelUpTime.Before(self.l[j].LevelUpTime)
+	}
+	return x < y
+}
+
 func (self ConnectSorter) Swap(i, j int) {
 	self.l[i], self.l[j] = self.l[j], self.l[i]
 }

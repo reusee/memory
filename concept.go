@@ -12,6 +12,12 @@ const (
 	SENTENCE
 )
 
+var whatName = map[int]string{
+	AUDIO:    "audio",
+	WORD:     "word",
+	SENTENCE: "sentence",
+}
+
 type Concept struct {
 	Serial     int
 	What       int
