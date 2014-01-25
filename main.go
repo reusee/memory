@@ -141,7 +141,6 @@ func main() {
 		}
 		// sort
 		sort.Sort(ConnectSorter{connects, mem})
-		fmt.Printf("%d to train\n", len(connects))
 		// train
 		err := termbox.Init()
 		if err != nil {
