@@ -54,6 +54,40 @@ func main() {
 	}
 	mem.Load()
 
+	getPendingConnect := func() []*Connect {
+		var connects []*Connect
+		for _, connect := range mem.Connects {
+			from := mem.Concepts[connect.From]
+			if (from.What == WORD || from.What == SENTENCE) && from.Incomplete {
+				continue
+			}
+			if connect.LevelUpTime.Add(LevelTime[connect.Level]).After(time.Now()) {
+				continue
+			}
+			connects = append(connects, connect)
+		}
+		return connects
+	}
+
+	statConnects := func(conns interface{}) {
+		c := make(map[int]int)
+		switch cs := conns.(type) {
+		case []*Connect:
+			for _, conn := range cs {
+				c[conn.Level]++
+			}
+		case map[string]*Connect:
+			for _, conn := range cs {
+				c[conn.Level]++
+			}
+		}
+		for i := len(LevelTime) - 1; i >= 0; i-- {
+			if c[i] > 0 {
+				fmt.Printf("%d %d\n", i, c[i])
+			}
+		}
+	}
+
 	cmd := os.Args[1]
 	switch cmd {
 
@@ -127,18 +161,7 @@ func main() {
 		mem.Save()
 
 	case "train":
-		// get connects
-		var connects []*Connect
-		for _, connect := range mem.Connects {
-			from := mem.Concepts[connect.From]
-			if (from.What == WORD || from.What == SENTENCE) && from.Incomplete {
-				continue
-			}
-			if connect.LevelUpTime.Add(LevelTime[connect.Level]).After(time.Now()) {
-				continue
-			}
-			connects = append(connects, connect)
-		}
+		connects := getPendingConnect()
 		// sort
 		sort.Sort(ConnectSorter{connects, mem})
 		// train
@@ -258,13 +281,12 @@ func main() {
 		fmt.Printf("\n")
 
 		// connectes
-		c := make(map[int]int)
-		for _, conn := range mem.Connects {
-			c[conn.Level]++
-		}
-		for level, count := range c {
-			fmt.Printf("%d %d %v\n", level, count, LevelTime[level])
-		}
+		statConnects(mem.Connects)
+		fmt.Printf("%d connects\n\n", len(mem.Connects))
+
+		cs := getPendingConnect()
+		statConnects(cs)
+		fmt.Printf("%d pending\n", len(cs))
 
 	default:
 		fmt.Printf("unknown command\n")
