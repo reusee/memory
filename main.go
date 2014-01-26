@@ -21,7 +21,7 @@ var rootPath string
 
 var LevelTime = []time.Duration{
 	0,
-	time.Minute * 10,
+	time.Minute * 30,
 	time.Hour * 24,
 	time.Hour * 24 * 2,
 	time.Hour * 24 * 4,
@@ -40,6 +40,8 @@ func init() {
 	_, rootPath, _, _ = runtime.Caller(0)
 	rootPath, _ = filepath.Abs(rootPath)
 	rootPath = filepath.Dir(rootPath)
+
+	rand.Seed(time.Now().UnixNano())
 }
 
 func main() {
@@ -328,8 +330,10 @@ func (self ConnectSorter) Len() int {
 }
 
 func (self ConnectSorter) pri(connect *Connect) int {
-	if connect.Level > 0 {
+	if connect.Level > 1 {
 		return connect.Level*(-1000) - rand.Intn(1000)
+	} else if connect.Level == 1 {
+		return -(2 ^ 30) - rand.Intn(1024)
 	}
 
 	n := 0
