@@ -333,7 +333,7 @@ func (self ConnectSorter) pri(connect *Connect) int {
 	if connect.Level > 1 {
 		return connect.Level*(-1000) - rand.Intn(1000)
 	} else if connect.Level == 1 {
-		return -(2 ^ 30) - rand.Intn(1024)
+		return -10000000 - rand.Intn(1024)
 	}
 
 	n := 0
