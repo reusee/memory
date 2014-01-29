@@ -177,7 +177,7 @@ func main() {
 		for i, connect := range connects {
 			//connect.Dump(mem)
 			//continue
-			if i > 100 || time.Now().Sub(t0) > time.Minute*5 {
+			if i > 100 || time.Now().Sub(t0) > time.Minute*10 {
 				break
 			}
 			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
