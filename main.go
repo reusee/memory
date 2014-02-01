@@ -195,7 +195,7 @@ func main() {
 				y := height/2 + 2
 				for i := len(connect.Histories) - 1; i >= 0; i-- {
 					t := connect.Histories[i].Time
-					p(width/3, y, fmt.Sprintf("%d %d-%d-%d %d:%d %v", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t))
+					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %v", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), time.Now().Sub(t)))
 					y++
 				}
 				termbox.SetCell(width/3, height/2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
@@ -215,8 +215,7 @@ func main() {
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
 				case termbox.KeyArrowLeft:
-					lastHistory := connect.Histories[len(connect.Histories)-1]
-					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
+					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
 				case termbox.KeyTab:
 					return
@@ -234,7 +233,7 @@ func main() {
 				y := height/2 + 2
 				for i := len(connect.Histories) - 1; i >= 0; i-- {
 					t := connect.Histories[i].Time
-					p(width/3, y, fmt.Sprintf("%d %d-%d-%d %d:%d", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute()))
+					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %v", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), time.Now().Sub(t)))
 					y++
 				}
 				termbox.PollEvent()
@@ -252,8 +251,7 @@ func main() {
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
 				case termbox.KeyArrowLeft:
-					lastHistory := connect.Histories[len(connect.Histories)-1]
-					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
+					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
 				case termbox.KeyTab:
 					return
