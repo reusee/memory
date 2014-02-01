@@ -63,7 +63,8 @@ func main() {
 			if (from.What == WORD || from.What == SENTENCE) && from.Incomplete {
 				continue
 			}
-			if connect.LevelUpTime.Add(LevelTime[connect.Level]).After(time.Now()) {
+			lastHistory := connect.Histories[len(connect.Histories)-1]
+			if lastHistory.Time.Add(LevelTime[lastHistory.Level]).After(time.Now()) {
 				continue
 			}
 			connects = append(connects, connect)
@@ -76,11 +77,13 @@ func main() {
 		switch cs := conns.(type) {
 		case []*Connect:
 			for _, conn := range cs {
-				c[conn.Level]++
+				lastHistory := conn.Histories[len(conn.Histories)-1]
+				c[lastHistory.Level]++
 			}
 		case map[string]*Connect:
 			for _, conn := range cs {
-				c[conn.Level]++
+				lastHistory := conn.Histories[len(conn.Histories)-1]
+				c[lastHistory.Level]++
 			}
 		}
 		for i := len(LevelTime) - 1; i >= 0; i-- {
@@ -144,15 +147,19 @@ func main() {
 				mem.AddConcept(textConcept)
 				// add connect
 				mem.AddConnect(&Connect{
-					From:        concept.Key(),
-					To:          textConcept.Key(),
-					LevelUpTime: time.Now(),
+					From: concept.Key(),
+					To:   textConcept.Key(),
+					Histories: []History{
+						History{Level: 0, Time: time.Now()},
+					},
 				})
 				if what == WORD {
 					mem.AddConnect(&Connect{
-						From:        textConcept.Key(),
-						To:          concept.Key(),
-						LevelUpTime: time.Now(),
+						From: textConcept.Key(),
+						To:   concept.Key(),
+						Histories: []History{
+							History{Level: 0, Time: time.Now()},
+						},
 					})
 				}
 			}
@@ -175,8 +182,6 @@ func main() {
 		width, height := termbox.Size()
 		t0 := time.Now()
 		for i, connect := range connects {
-			//connect.Dump(mem)
-			//continue
 			if i > 80 || time.Now().Sub(t0) > time.Minute*8 {
 				break
 			}
@@ -187,55 +192,70 @@ func main() {
 			to := mem.Concepts[connect.To]
 			switch from.What {
 			case AUDIO: // play audio
-			repeat:
+				y := height/2 + 2
+				for i := len(connect.Histories) - 1; i >= 0; i-- {
+					t := connect.Histories[i].Time
+					p(width/3, y, fmt.Sprintf("%d %d-%d-%d %d:%d %v", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t))
+					y++
+				}
 				termbox.SetCell(width/3, height/2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
-				termbox.SetCell(width/3, height/2+1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				from.Play()
 				termbox.SetCell(width/3, height/2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				if to.What == WORD {
 					termbox.PollEvent()
+					p(width/3, height/2+1, "=>"+to.Text)
 				}
-				p(width/3, height/2+2, "=>"+to.Text)
+			repeat:
 				ev := termbox.PollEvent()
 				switch ev.Key {
 				case termbox.KeyEnter:
-					connect.Level++
-					connect.LevelUpTime = time.Now()
+					lastHistory := connect.Histories[len(connect.Histories)-1]
+					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
 				case termbox.KeyArrowLeft:
-					connect.Level = 1
-					connect.LevelUpTime = time.Now()
+					lastHistory := connect.Histories[len(connect.Histories)-1]
+					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
-				case termbox.KeyEsc:
+				case termbox.KeyTab:
 					return
 				default:
+					termbox.SetCell(width/3, height/2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+					termbox.Flush()
+					from.Play()
+					termbox.SetCell(width/3, height/2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
+					termbox.Flush()
 					goto repeat
 				}
 
 			case WORD: // show text
 				p(width/3, height/2, "=>"+from.Text)
-				termbox.SetCell(width/3, height/2+1, rune(fmt.Sprintf("%d", connect.Level)[0]), termbox.ColorDefault, termbox.ColorDefault)
+				y := height/2 + 2
+				for i := len(connect.Histories) - 1; i >= 0; i-- {
+					t := connect.Histories[i].Time
+					p(width/3, y, fmt.Sprintf("%d %d-%d-%d %d:%d", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute()))
+					y++
+				}
 				termbox.PollEvent()
 				to := mem.Concepts[connect.To]
 			repeat2:
-				termbox.SetCell(width/3, height/2+2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width/3, height/2+1, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				to.Play()
-				termbox.SetCell(width/3, height/2+2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
+				termbox.SetCell(width/3, height/2+1, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
 				termbox.Flush()
 				ev := termbox.PollEvent()
 				switch ev.Key {
 				case termbox.KeyEnter:
-					connect.Level++
-					connect.LevelUpTime = time.Now()
+					lastHistory := connect.Histories[len(connect.Histories)-1]
+					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
 				case termbox.KeyArrowLeft:
-					connect.Level = 1
-					connect.LevelUpTime = time.Now()
+					lastHistory := connect.Histories[len(connect.Histories)-1]
+					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
-				case termbox.KeyEsc:
+				case termbox.KeyTab:
 					return
 				default:
 					goto repeat2
@@ -330,9 +350,10 @@ func (self ConnectSorter) Len() int {
 }
 
 func (self ConnectSorter) pri(connect *Connect) int {
-	if connect.Level > 1 {
-		return connect.Level*(-1000) - rand.Intn(1000)
-	} else if connect.Level == 1 {
+	lastHistory := connect.Histories[len(connect.Histories)-1]
+	if lastHistory.Level > 1 {
+		return lastHistory.Level*(-1000) - rand.Intn(1000)
+	} else if lastHistory.Level == 1 {
 		return -10000000 - rand.Intn(1024)
 	}
 
@@ -356,7 +377,7 @@ func (self ConnectSorter) pri(connect *Connect) int {
 func (self ConnectSorter) Less(i, j int) bool {
 	x, y := self.pri(self.l[i]), self.pri(self.l[j])
 	if x == y {
-		return self.l[i].LevelUpTime.Before(self.l[j].LevelUpTime)
+		self.l[i].Histories[len(self.l[i].Histories)-1].Time.Before(self.l[j].Histories[len(self.l[j].Histories)-1].Time)
 	}
 	return x < y
 }
