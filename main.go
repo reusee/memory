@@ -186,8 +186,6 @@ func main() {
 				break
 			}
 			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
-			p(0, 0, fmt.Sprintf("%v", time.Now().Sub(t0)))
-			p(0, 1, fmt.Sprintf("%d", i))
 			from := mem.Concepts[connect.From]
 			to := mem.Concepts[connect.To]
 			switch from.What {
@@ -198,16 +196,15 @@ func main() {
 					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %v", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), time.Now().Sub(t)))
 					y++
 				}
-				termbox.SetCell(width/3, height/2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
-				termbox.Flush()
+				p(width/3, height/2+1, ">                                                                                  ")
 				from.Play()
-				termbox.SetCell(width/3, height/2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
-				termbox.Flush()
 				if to.What == WORD {
+					p(width/3, height/2+1, "press any key to show text")
 					termbox.PollEvent()
-					p(width/3, height/2+1, "=>"+to.Text)
+					p(width/3, height/2, to.Text)
 				}
 			repeat:
+				p(width/3, height/2+1, "press Enter to levelup, Left to reset level, Tab to exit, other keys to repeat")
 				ev := termbox.PollEvent()
 				switch ev.Key {
 				case termbox.KeyEnter:
@@ -220,30 +217,28 @@ func main() {
 				case termbox.KeyTab:
 					return
 				default:
-					termbox.SetCell(width/3, height/2, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
-					termbox.Flush()
+					p(width/3, height/2+1, ">                                                                                 ")
 					from.Play()
-					termbox.SetCell(width/3, height/2, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
-					termbox.Flush()
+					p(width/3, height/2+1, "                                                                                  ")
 					goto repeat
 				}
 
 			case WORD: // show text
-				p(width/3, height/2, "=>"+from.Text)
+				p(width/3, height/2, from.Text)
 				y := height/2 + 2
 				for i := len(connect.Histories) - 1; i >= 0; i-- {
 					t := connect.Histories[i].Time
 					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %v", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), time.Now().Sub(t)))
 					y++
 				}
+				p(width/3, height/2+1, "press any key to play audio")
 				termbox.PollEvent()
 				to := mem.Concepts[connect.To]
 			repeat2:
-				termbox.SetCell(width/3, height/2+1, rune('>'), termbox.ColorDefault, termbox.ColorDefault)
+				p(width/3, height/2+1, ">                                                                                   ")
 				termbox.Flush()
 				to.Play()
-				termbox.SetCell(width/3, height/2+1, rune(' '), termbox.ColorDefault, termbox.ColorDefault)
-				termbox.Flush()
+				p(width/3, height/2+1, "press Enter to levelup, Left to reset level, Tab to exit, other keys to repeat")
 				ev := termbox.PollEvent()
 				switch ev.Key {
 				case termbox.KeyEnter:
