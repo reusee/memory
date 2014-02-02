@@ -370,7 +370,7 @@ func (self ConnectSorter) pri(connect *Connect) int {
 func (self ConnectSorter) Less(i, j int) bool {
 	x, y := self.pri(self.l[i]), self.pri(self.l[j])
 	if x == y {
-		self.l[i].Histories[len(self.l[i].Histories)-1].Time.Before(self.l[j].Histories[len(self.l[j].Histories)-1].Time)
+		return self.l[i].Histories[len(self.l[i].Histories)-1].Time.Before(self.l[j].Histories[len(self.l[j].Histories)-1].Time)
 	}
 	return x < y
 }
