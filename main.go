@@ -193,7 +193,7 @@ func main() {
 				y := height/2 + 2
 				for i := len(connect.Histories) - 1; i >= 0; i-- {
 					t := connect.Histories[i].Time
-					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %v", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), time.Now().Sub(t)))
+					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %s", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), formatDuration(time.Now().Sub(t))))
 					y++
 				}
 				p(width/3, height/2+1, ">                                                                                  ")
@@ -228,7 +228,7 @@ func main() {
 				y := height/2 + 2
 				for i := len(connect.Histories) - 1; i >= 0; i-- {
 					t := connect.Histories[i].Time
-					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %v", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), time.Now().Sub(t)))
+					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %s", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), formatDuration(time.Now().Sub(t))))
 					y++
 				}
 				p(width/3, height/2+1, "press any key to play audio")
@@ -377,4 +377,35 @@ func (self ConnectSorter) Less(i, j int) bool {
 
 func (self ConnectSorter) Swap(i, j int) {
 	self.l[i], self.l[j] = self.l[j], self.l[i]
+}
+
+func formatDuration(duration time.Duration) string {
+	var ret string
+	var m, h, d, y time.Duration
+	m = duration / time.Minute
+	if m >= 60 {
+		h = m / 60
+		m = m % 60
+	}
+	if h >= 24 {
+		d = h / 24
+		h = h % 24
+	}
+	if d > 365 {
+		y = d / 365
+		d = d % 365
+	}
+	if y > 0 {
+		ret += fmt.Sprintf("%dyear", y)
+	}
+	if d > 0 {
+		ret += fmt.Sprintf("%dday", d)
+	}
+	if h > 0 {
+		ret += fmt.Sprintf("%dhour", h)
+	}
+	if m > 0 {
+		ret += fmt.Sprintf("%dmin", m)
+	}
+	return ret
 }
