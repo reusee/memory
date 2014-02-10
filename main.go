@@ -63,10 +63,28 @@ func main() {
 			if (from.What == WORD || from.What == SENTENCE) && from.Incomplete {
 				continue
 			}
-			lastHistory := connect.Histories[len(connect.Histories)-1]
-			if lastHistory.Time.Add(LevelTime[lastHistory.Level]).After(time.Now()) {
-				continue
+
+			if connect.Histories[0].Level != 0 { // old scheduler
+				lastHistory := connect.Histories[len(connect.Histories)-1]
+				if lastHistory.Time.Add(LevelTime[lastHistory.Level]).After(time.Now()) {
+					continue
+				}
+			} else { // new scheduler
+				if len(connect.Histories) == 1 { // new connect
+				} else if len(connect.Histories) == 2 { // newly learnt
+					if connect.Histories[1].Time.Add(time.Minute * 30).After(time.Now()) {
+						continue
+					}
+				} else if len(connect.Histories) > 2 {
+					t1 := connect.Histories[len(connect.Histories)-1].Time
+					t2 := connect.Histories[len(connect.Histories)-2].Time
+					dt := t1.Sub(t2)
+					if t1.Add(dt * 2).After(time.Now()) {
+						continue
+					}
+				}
 			}
+
 			connects = append(connects, connect)
 		}
 		return connects
