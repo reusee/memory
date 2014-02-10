@@ -78,8 +78,11 @@ func main() {
 				} else if len(connect.Histories) > 2 {
 					t1 := connect.Histories[len(connect.Histories)-1].Time
 					t2 := connect.Histories[len(connect.Histories)-2].Time
-					dt := t1.Sub(t2)
-					if t1.Add(dt * 2).After(time.Now()) {
+					dt := t1.Sub(t2) * 2
+					if dt < time.Hour*24 {
+						dt = time.Hour * 24
+					}
+					if t1.Add(dt).After(time.Now()) {
 						continue
 					}
 				}
