@@ -64,29 +64,31 @@ func main() {
 				continue
 			}
 
-			if connect.Histories[0].Level != 0 { // old scheduler
-				lastHistory := connect.Histories[len(connect.Histories)-1]
-				if lastHistory.Time.Add(LevelTime[lastHistory.Level]).After(time.Now()) {
-					continue
-				}
-			} else { // new scheduler
-				if len(connect.Histories) == 1 { // new connect
-				} else if len(connect.Histories) == 2 { // newly learnt
-					if connect.Histories[1].Time.Add(time.Minute * 30).After(time.Now()) {
-						continue
-					}
-				} else if len(connect.Histories) > 2 {
-					t1 := connect.Histories[len(connect.Histories)-1].Time
-					t2 := connect.Histories[len(connect.Histories)-2].Time
-					dt := t1.Sub(t2) * 2
-					if dt < time.Hour*24 {
-						dt = time.Hour * 24
-					}
-					if t1.Add(dt).After(time.Now()) {
-						continue
-					}
-				}
+			//if connect.Histories[0].Level != 0 { // old scheduler
+			lastHistory := connect.Histories[len(connect.Histories)-1]
+			if lastHistory.Time.Add(LevelTime[lastHistory.Level]).After(time.Now()) {
+				continue
 			}
+			/*
+				} else { // new scheduler
+					if len(connect.Histories) == 1 { // new connect
+					} else if len(connect.Histories) == 2 { // newly learnt
+						if connect.Histories[1].Time.Add(time.Minute * 30).After(time.Now()) {
+							continue
+						}
+					} else if len(connect.Histories) > 2 {
+						t1 := connect.Histories[len(connect.Histories)-1].Time
+						t2 := connect.Histories[len(connect.Histories)-2].Time
+						dt := t1.Sub(t2) * 2
+						if dt < time.Hour*24 {
+							dt = time.Hour * 24
+						}
+						if t1.Add(dt).After(time.Now()) {
+							continue
+						}
+					}
+				}
+			*/
 
 			connects = append(connects, connect)
 		}
@@ -111,6 +113,19 @@ func main() {
 			if c[i] > 0 {
 				fmt.Printf("%d %d\n", i, c[i])
 			}
+		}
+	}
+
+	printHistories := func(connect *Connect, width, height int) {
+		y := height/2 + 2
+		lastTime := time.Now()
+		for i := len(connect.Histories) - 1; i >= 0; i-- {
+			t := connect.Histories[i].Time
+			p(width/3, y, formatDuration(lastTime.Sub(t)))
+			lastTime = t
+			y++
+			p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute()))
+			y++
 		}
 	}
 
@@ -210,13 +225,9 @@ func main() {
 			from := mem.Concepts[connect.From]
 			to := mem.Concepts[connect.To]
 			switch from.What {
+
 			case AUDIO: // play audio
-				y := height/2 + 2
-				for i := len(connect.Histories) - 1; i >= 0; i-- {
-					t := connect.Histories[i].Time
-					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %s", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), formatDuration(time.Now().Sub(t))))
-					y++
-				}
+				printHistories(connect, width, height)
 				p(width/3, height/2+1, ">                                                                                  ")
 				from.Play()
 				if to.What == WORD {
@@ -246,12 +257,7 @@ func main() {
 
 			case WORD: // show text
 				p(width/3, height/2, from.Text)
-				y := height/2 + 2
-				for i := len(connect.Histories) - 1; i >= 0; i-- {
-					t := connect.Histories[i].Time
-					p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d %s", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), formatDuration(time.Now().Sub(t))))
-					y++
-				}
+				printHistories(connect, width, height)
 				p(width/3, height/2+1, "press any key to play audio")
 				termbox.PollEvent()
 				to := mem.Concepts[connect.To]
@@ -417,16 +423,16 @@ func formatDuration(duration time.Duration) string {
 		d = d % 365
 	}
 	if y > 0 {
-		ret += fmt.Sprintf("%dyear", y)
+		ret += fmt.Sprintf("%dyears", y)
 	}
 	if d > 0 {
-		ret += fmt.Sprintf("%dday", d)
+		ret += fmt.Sprintf("%ddays", d)
 	}
 	if h > 0 {
-		ret += fmt.Sprintf("%dhour", h)
+		ret += fmt.Sprintf("%dhours", h)
 	}
 	if m > 0 {
-		ret += fmt.Sprintf("%dmin", m)
+		ret += fmt.Sprintf("%dmins", m)
 	}
 	return ret
 }
