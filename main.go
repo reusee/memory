@@ -423,16 +423,16 @@ func formatDuration(duration time.Duration) string {
 		d = d % 365
 	}
 	if y > 0 {
-		ret += fmt.Sprintf("%dyears", y)
+		ret += fmt.Sprintf("%dyears.", y)
 	}
 	if d > 0 {
-		ret += fmt.Sprintf("%ddays", d)
+		ret += fmt.Sprintf("%ddays.", d)
 	}
 	if h > 0 {
-		ret += fmt.Sprintf("%dhours", h)
+		ret += fmt.Sprintf("%dhours.", h)
 	}
 	if m > 0 {
-		ret += fmt.Sprintf("%dmins", m)
+		ret += fmt.Sprintf("%dmins.", m)
 	}
 	return ret
 }
