@@ -333,13 +333,25 @@ func main() {
 		// future
 		print("\nfuture\n")
 		last := 0
-		for i := 0; i < 48; i++ {
+		lastDay := ""
+		daySum := 0
+		for i := 0; i < 96; i++ {
 			t := time.Now().Add(time.Hour * time.Duration(i))
+			day := fmt.Sprintf("%4d%2d%2d", t.Year(), t.Month(), t.Day())
+			if lastDay != "" && day != lastDay {
+				fmt.Printf("%d\n", daySum)
+				daySum = 0
+			}
+			lastDay = day
 			n := len(getPendingConnect(t))
 			if n != last {
 				fmt.Printf("%-5d %04d-%02d-%02d %02d:%02d\n", n-last, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute())
+				daySum += n - last
 			}
 			last = n
+		}
+		if daySum > 0 {
+			fmt.Printf("%d\n", daySum)
 		}
 
 	default:
