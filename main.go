@@ -330,8 +330,8 @@ func main() {
 		statConnects(cs)
 		fmt.Printf("%d pending\n", len(cs))
 
-		// foresee
-		print("\n")
+		// future
+		print("\nfuture\n")
 		last := 0
 		for i := 0; i < 48; i++ {
 			t := time.Now().Add(time.Hour * time.Duration(i))
