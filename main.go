@@ -56,7 +56,7 @@ func main() {
 	}
 	mem.Load()
 
-	getPendingConnect := func() []*Connect {
+	getPendingConnect := func(now time.Time) []*Connect {
 		var connects []*Connect
 		for _, connect := range mem.Connects {
 			from := mem.Concepts[connect.From]
@@ -66,14 +66,14 @@ func main() {
 
 			//if connect.Histories[0].Level != 0 { // old scheduler
 			lastHistory := connect.Histories[len(connect.Histories)-1]
-			if lastHistory.Time.Add(LevelTime[lastHistory.Level]).After(time.Now()) {
+			if lastHistory.Time.Add(LevelTime[lastHistory.Level]).After(now) {
 				continue
 			}
 			/*
 				} else { // new scheduler
 					if len(connect.Histories) == 1 { // new connect
 					} else if len(connect.Histories) == 2 { // newly learnt
-						if connect.Histories[1].Time.Add(time.Minute * 30).After(time.Now()) {
+						if connect.Histories[1].Time.Add(time.Minute * 30).After(now) {
 							continue
 						}
 					} else if len(connect.Histories) > 2 {
@@ -83,7 +83,7 @@ func main() {
 						if dt < time.Hour*24 {
 							dt = time.Hour * 24
 						}
-						if t1.Add(dt).After(time.Now()) {
+						if t1.Add(dt).After(now) {
 							continue
 						}
 					}
@@ -206,7 +206,7 @@ func main() {
 		mem.Save()
 
 	case "train":
-		connects := getPendingConnect()
+		connects := getPendingConnect(time.Now())
 		// sort
 		sort.Sort(ConnectSorter{connects, mem})
 		// train
@@ -326,9 +326,21 @@ func main() {
 		statConnects(mem.Connects)
 		fmt.Printf("%d connects\n\n", len(mem.Connects))
 
-		cs := getPendingConnect()
+		cs := getPendingConnect(time.Now())
 		statConnects(cs)
 		fmt.Printf("%d pending\n", len(cs))
+
+		// foresee
+		print("\n")
+		last := 0
+		for i := 0; i < 48; i++ {
+			t := time.Now().Add(time.Hour * time.Duration(i))
+			n := len(getPendingConnect(t))
+			if n != last {
+				fmt.Printf("%-5d %04d-%02d-%02d %02d:%02d\n", n-last, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute())
+			}
+			last = n
+		}
 
 	default:
 		fmt.Printf("unknown command\n")
