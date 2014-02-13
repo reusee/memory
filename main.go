@@ -335,7 +335,7 @@ func main() {
 		last := 0
 		lastDay := ""
 		daySum := 0
-		for i := 0; i < 96; i++ {
+		for i := 0; i < 24 * 7; i++ {
 			t := time.Now().Add(time.Hour * time.Duration(i))
 			day := fmt.Sprintf("%4d%2d%2d", t.Year(), t.Month(), t.Day())
 			if lastDay != "" && day != lastDay {
