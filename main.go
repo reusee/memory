@@ -397,10 +397,8 @@ func (self ConnectSorter) Len() int {
 
 func (self ConnectSorter) pri(connect *Connect) int {
 	lastHistory := connect.Histories[len(connect.Histories)-1]
-	if lastHistory.Level > 1 {
-		return lastHistory.Level*(-1000) - rand.Intn(1000)
-	} else if lastHistory.Level == 1 {
-		return -10000000 - rand.Intn(1024)
+	if lastHistory.Level > 0 {
+		return (100-lastHistory.Level)*(-1000) - rand.Intn(1000)
 	}
 
 	n := 0
