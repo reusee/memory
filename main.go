@@ -21,7 +21,7 @@ var rootPath string
 
 var LevelTime = []time.Duration{
 	0,
-	time.Minute * 30,
+	time.Minute * 10,
 	time.Hour * 24,
 	time.Hour * 24 * 2,
 	time.Hour * 24 * 4,
