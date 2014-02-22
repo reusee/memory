@@ -117,7 +117,7 @@ func main() {
 	}
 
 	printHistories := func(connect *Connect, width, height int) {
-		y := height/2 + 2
+		y := height/3 + 2
 		lastTime := time.Now()
 		for i := len(connect.Histories) - 1; i >= 0; i-- {
 			t := connect.Histories[i].Time
@@ -228,15 +228,15 @@ func main() {
 
 			case AUDIO: // play audio
 				printHistories(connect, width, height)
-				p(width/3, height/2+1, ">                                                                                  ")
+				p(width/3, height/3+1, ">                                                                                  ")
 				from.Play()
 				if to.What == WORD {
-					p(width/3, height/2+1, "press any key to show text")
+					p(width/3, height/3+1, "press any key to show text")
 					termbox.PollEvent()
-					p(width/3, height/2, to.Text)
+					p(width/3, height/3, to.Text)
 				}
 			repeat:
-				p(width/3, height/2+1, "press Enter to levelup, Left to reset level, Tab to exit, other keys to repeat")
+				p(width/3, height/3+1, "press Enter to levelup, Left to reset level, Tab to exit, other keys to repeat")
 				ev := termbox.PollEvent()
 				switch ev.Key {
 				case termbox.KeyEnter:
@@ -249,23 +249,23 @@ func main() {
 				case termbox.KeyTab:
 					return
 				default:
-					p(width/3, height/2+1, ">                                                                                 ")
+					p(width/3, height/3+1, ">                                                                                 ")
 					from.Play()
-					p(width/3, height/2+1, "                                                                                  ")
+					p(width/3, height/3+1, "                                                                                  ")
 					goto repeat
 				}
 
 			case WORD: // show text
-				p(width/3, height/2, from.Text)
+				p(width/3, height/3, from.Text)
 				printHistories(connect, width, height)
-				p(width/3, height/2+1, "press any key to play audio")
+				p(width/3, height/3+1, "press any key to play audio")
 				termbox.PollEvent()
 				to := mem.Concepts[connect.To]
 			repeat2:
-				p(width/3, height/2+1, ">                                                                                   ")
+				p(width/3, height/3+1, ">                                                                                   ")
 				termbox.Flush()
 				to.Play()
-				p(width/3, height/2+1, "press Enter to levelup, Left to reset level, Tab to exit, other keys to repeat")
+				p(width/3, height/3+1, "press Enter to levelup, Left to reset level, Tab to exit, other keys to repeat")
 				ev := termbox.PollEvent()
 				switch ev.Key {
 				case termbox.KeyEnter:
