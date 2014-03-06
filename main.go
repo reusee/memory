@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -22,18 +23,6 @@ var rootPath string
 var LevelTime = []time.Duration{
 	0,
 	time.Minute * 10,
-	time.Hour * 24,
-	time.Hour * 24 * 2,
-	time.Hour * 24 * 4,
-	time.Hour * 24 * 8,
-	time.Hour * 24 * 16,
-	time.Hour * 24 * 32,
-	time.Hour * 24 * 64,
-	time.Hour * 24 * 128,
-	time.Hour * 24 * 256,
-	time.Hour * 24 * 512,
-	time.Hour * 24 * 1024,
-	time.Hour * 24 * 2048,
 }
 
 func init() {
@@ -42,6 +31,14 @@ func init() {
 	rootPath = filepath.Dir(rootPath)
 
 	rand.Seed(time.Now().UnixNano())
+
+	base := 2.3
+	for i := 0.0; i < 12; i++ {
+		LevelTime = append(LevelTime, time.Duration(float64(time.Hour*24)*math.Pow(base, i)))
+	}
+	//for _, t := range LevelTime {
+	//	fmt.Printf("%s\n", formatDuration(t))
+	//}
 }
 
 func main() {
@@ -218,7 +215,7 @@ func main() {
 		width, height := termbox.Size()
 		t0 := time.Now()
 		for i, connect := range connects {
-			if i > 50 || time.Now().Sub(t0) > time.Minute*8 {
+			if i > 60 || time.Now().Sub(t0) > time.Minute*8 {
 				break
 			}
 			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
