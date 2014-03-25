@@ -35,6 +35,7 @@ func init() {
 	base := 2.3
 	for i := 0.0; i < 12; i++ {
 		LevelTime = append(LevelTime, time.Duration(float64(time.Hour*24)*math.Pow(base, i)))
+		//fmt.Printf("%s\n", formatDuration(LevelTime[len(LevelTime)-1]))
 	}
 }
 
