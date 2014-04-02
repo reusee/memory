@@ -213,7 +213,7 @@ func main() {
 		width, height := termbox.Size()
 		t0 := time.Now()
 		for i, connect := range connects {
-			if i > 70 || time.Now().Sub(t0) > time.Minute*10 {
+			if i > 80 || time.Now().Sub(t0) > time.Minute*10 {
 				break
 			}
 			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
