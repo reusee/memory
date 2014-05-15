@@ -22,7 +22,7 @@ var rootPath string
 
 var LevelTime = []time.Duration{
 	0,
-	time.Minute * 10,
+	//time.Minute * 10,
 }
 
 func init() {
@@ -35,7 +35,7 @@ func init() {
 	base := 2.3
 	for i := 0.0; i < 12; i++ {
 		LevelTime = append(LevelTime, time.Duration(float64(time.Hour*24)*math.Pow(base, i)))
-		//fmt.Printf("%s\n", formatDuration(LevelTime[len(LevelTime)-1]))
+		fmt.Printf("%d %s\n", int(i+1), formatDuration(LevelTime[len(LevelTime)-1]))
 	}
 }
 
