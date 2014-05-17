@@ -22,7 +22,6 @@ var rootPath string
 
 var LevelTime = []time.Duration{
 	0,
-	//time.Minute * 10,
 }
 
 func init() {
@@ -35,7 +34,7 @@ func init() {
 	base := 2.3
 	for i := 0.0; i < 12; i++ {
 		LevelTime = append(LevelTime, time.Duration(float64(time.Hour*24)*math.Pow(base, i)))
-		fmt.Printf("%d %s\n", int(i+1), formatDuration(LevelTime[len(LevelTime)-1]))
+		//fmt.Printf("%d %s\n", int(i+1), formatDuration(LevelTime[len(LevelTime)-1]))
 	}
 }
 
@@ -59,31 +58,10 @@ func main() {
 				continue
 			}
 
-			//if connect.Histories[0].Level != 0 { // old scheduler
 			lastHistory := connect.Histories[len(connect.Histories)-1]
 			if lastHistory.Time.Add(LevelTime[lastHistory.Level]).After(now) {
 				continue
 			}
-			/*
-				} else { // new scheduler
-					if len(connect.Histories) == 1 { // new connect
-					} else if len(connect.Histories) == 2 { // newly learnt
-						if connect.Histories[1].Time.Add(time.Minute * 30).After(now) {
-							continue
-						}
-					} else if len(connect.Histories) > 2 {
-						t1 := connect.Histories[len(connect.Histories)-1].Time
-						t2 := connect.Histories[len(connect.Histories)-2].Time
-						dt := t1.Sub(t2) * 2
-						if dt < time.Hour*24 {
-							dt = time.Hour * 24
-						}
-						if t1.Add(dt).After(now) {
-							continue
-						}
-					}
-				}
-			*/
 
 			connects = append(connects, connect)
 		}
@@ -125,9 +103,8 @@ func main() {
 	}
 
 	cmd := os.Args[1]
-	switch cmd {
-
-	case "add": // add audio files
+	// add audio files
+	if cmd == "and" {
 		if len(os.Args) < 3 {
 			fmt.Printf("word or sentence?\n")
 			os.Exit(0)
@@ -200,7 +177,8 @@ func main() {
 		fmt.Printf("%d concepts, %d connects\n", len(mem.Concepts), len(mem.Connects))
 		mem.Save()
 
-	case "train":
+		// train
+	} else if cmd == "train" {
 		connects := getPendingConnect(time.Now())
 		// sort
 		sort.Sort(ConnectSorter{connects, mem})
@@ -280,7 +258,8 @@ func main() {
 			}
 		}
 
-	case "complete":
+		// complete connection
+	} else if cmd == "complete" {
 		for _, connect := range mem.Connects {
 			from := mem.Concepts[connect.From]
 			if !from.Incomplete && from.Text != "" {
@@ -297,7 +276,8 @@ func main() {
 			mem.Save()
 		}
 
-	case "stat":
+		// statistics
+	} else if cmd == "stat" {
 		// concepts
 		var total, word, sen, audio int
 		for _, concept := range mem.Concepts {
@@ -351,7 +331,25 @@ func main() {
 			fmt.Printf("%d\n", daySum)
 		}
 
-	default:
+		// train history
+	} else if cmd == "history" {
+		counter := make(map[string]int)
+		for _, connect := range mem.Connects {
+			for _, entry := range connect.Histories {
+				t := entry.Time
+				counter[fmt.Sprintf("%04d-%02d-%02d", t.Year(), t.Month(), t.Day())]++
+			}
+		}
+		var dates []string
+		for date, _ := range counter {
+			dates = append(dates, date)
+		}
+		sort.Strings(dates)
+		for _, date := range dates {
+			fmt.Printf("%s %d\n", date, counter[date])
+		}
+
+	} else {
 		fmt.Printf("unknown command\n")
 		os.Exit(0)
 	}
