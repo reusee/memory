@@ -31,10 +31,10 @@ func init() {
 
 	rand.Seed(time.Now().UnixNano())
 
-	base := 2.3
+	base := 2.2
 	for i := 0.0; i < 12; i++ {
 		LevelTime = append(LevelTime, time.Duration(float64(time.Hour*24)*math.Pow(base, i)))
-		//fmt.Printf("%d %s\n", int(i+1), formatDuration(LevelTime[len(LevelTime)-1]))
+		fmt.Printf("%d %s\n", int(i+1), formatDuration(LevelTime[len(LevelTime)-1]))
 	}
 }
 
@@ -310,7 +310,7 @@ func main() {
 		last := 0
 		lastDay := ""
 		daySum := 0
-		for i := 0; i < 24*7; i++ {
+		for i := 0; i < 24*30; i++ {
 			t := time.Now().Add(time.Hour * time.Duration(i))
 			day := fmt.Sprintf("%4d%2d%2d", t.Year(), t.Month(), t.Day())
 			if lastDay != "" && day != lastDay {
