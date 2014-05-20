@@ -107,7 +107,7 @@ func main() {
 
 	cmd := os.Args[1]
 	// add audio files
-	if cmd == "and" {
+	if cmd == "add" {
 		if len(os.Args) < 3 {
 			fmt.Printf("word or sentence?\n")
 			os.Exit(0)
