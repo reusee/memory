@@ -2,10 +2,8 @@ package main
 
 import (
 	"bytes"
-	"compress/zlib"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -45,24 +43,24 @@ func (self *Memory) NextSerial() int {
 }
 
 func (self *Memory) Save() {
-	// gob
 	buf := new(bytes.Buffer)
-	err := gob.NewEncoder(buf).Encode(self)
+	err := json.NewEncoder(buf).Encode(self)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// compress
-	zbuf := new(bytes.Buffer)
-	w := zlib.NewWriter(zbuf)
-	w.Write(buf.Bytes())
-	w.Close()
+	// indent
+	indented := new(bytes.Buffer)
+	err = json.Indent(indented, buf.Bytes(), "", "    ")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// write tmp file
 	tmpPath := filepath.Join(rootPath, fmt.Sprintf("db.%d", rand.Int63()))
 	out, err := os.Create(tmpPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = out.Write(zbuf.Bytes())
+	_, err = out.Write(indented.Bytes())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -72,15 +70,8 @@ func (self *Memory) Save() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	zbuf.Reset()
-	r, err := zlib.NewReader(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	io.Copy(zbuf, r)
-	r.Close()
 	mem := new(Memory)
-	err = gob.NewDecoder(zbuf).Decode(mem)
+	err = json.NewDecoder(f).Decode(mem)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -88,7 +79,7 @@ func (self *Memory) Save() {
 		log.Fatalf("save error")
 	}
 	// rename
-	filePath := filepath.Join(rootPath, "db")
+	filePath := filepath.Join(rootPath, "db.json")
 	err = os.Rename(tmpPath, filePath)
 	if err != nil {
 		log.Fatal(err)
@@ -96,7 +87,7 @@ func (self *Memory) Save() {
 }
 
 func (self *Memory) Load() {
-	filePath := filepath.Join(rootPath, "db")
+	filePath := filepath.Join(rootPath, "db.json")
 	f, err := os.Open(filePath)
 	if os.IsNotExist(err) {
 		return
@@ -104,13 +95,7 @@ func (self *Memory) Load() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	r, err := zlib.NewReader(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-	buf := new(bytes.Buffer)
-	io.Copy(buf, r)
-	err = gob.NewDecoder(buf).Decode(self)
+	err = json.NewDecoder(f).Decode(self)
 	if err != nil {
 		log.Fatal(err)
 	}
