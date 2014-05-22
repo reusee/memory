@@ -71,27 +71,6 @@ func main() {
 		return connects
 	}
 
-	statConnects := func(conns interface{}) {
-		c := make(map[int]int)
-		switch cs := conns.(type) {
-		case []*Connect:
-			for _, conn := range cs {
-				lastHistory := conn.Histories[len(conn.Histories)-1]
-				c[lastHistory.Level]++
-			}
-		case map[string]*Connect:
-			for _, conn := range cs {
-				lastHistory := conn.Histories[len(conn.Histories)-1]
-				c[lastHistory.Level]++
-			}
-		}
-		for i := len(LevelTime) - 1; i >= 0; i-- {
-			if c[i] > 0 {
-				fmt.Printf("%d %d\n", i, c[i])
-			}
-		}
-	}
-
 	printHistories := func(connect *Connect, width, height int) {
 		y := height/3 + 2
 		lastTime := time.Now()
@@ -277,61 +256,6 @@ func main() {
 			fmt.Scanf("%s\n", &from.Text)
 			from.Incomplete = false
 			mem.Save()
-		}
-
-		// statistics
-	} else if cmd == "stat" {
-		// concepts
-		var total, word, sen, audio int
-		for _, concept := range mem.Concepts {
-			total++
-			switch concept.What {
-			case WORD:
-				word++
-			case SENTENCE:
-				sen++
-			case AUDIO:
-				audio++
-			}
-		}
-		fmt.Printf("%d concepts\n", total)
-		fmt.Printf("%d words\n", word)
-		fmt.Printf("%d sentences\n", sen)
-		fmt.Printf("%d audios\n", audio)
-		fmt.Printf("\n")
-
-		// connectes
-		statConnects(mem.Connects)
-		fmt.Printf("%d connects\n\n", len(mem.Connects))
-
-		cs := getPendingConnect(time.Now())
-		statConnects(cs)
-		fmt.Printf("%d pending\n", len(cs))
-
-		// future
-		print("\nfuture\n")
-		last := 0
-		lastDay := ""
-		daySum := 0
-		for i := 0; i < 24*60; i++ {
-			t := time.Now().Add(time.Hour * time.Duration(i))
-			day := fmt.Sprintf("%4d%2d%2d", t.Year(), t.Month(), t.Day())
-			if lastDay != "" && day != lastDay {
-				if daySum > 0 {
-					fmt.Printf("%d\n", daySum)
-				}
-				daySum = 0
-			}
-			lastDay = day
-			n := len(getPendingConnect(t))
-			if n != last {
-				fmt.Printf("%-5d %04d-%02d-%02d %02d:%02d\n", n-last, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute())
-				daySum += n - last
-			}
-			last = n
-		}
-		if daySum > 0 {
-			fmt.Printf("%d\n", daySum)
 		}
 
 		// train history
