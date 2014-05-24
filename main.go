@@ -37,7 +37,7 @@ func init() {
 		t := time.Duration(float64(time.Hour*24) * math.Pow(base, i))
 		LevelTime = append(LevelTime, t)
 		total += t
-		fmt.Printf("%d %s %s\n", int(i+1), formatDuration(t), formatDuration(total))
+		//fmt.Printf("%d %s %s\n", int(i+1), formatDuration(t), formatDuration(total))
 	}
 }
 
