@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -315,35 +316,68 @@ func (self ConnectSorter) Len() int {
 	return len(self.l)
 }
 
-func (self ConnectSorter) pri(connect *Connect) int {
-	lastHistory := connect.Histories[len(connect.Histories)-1]
-	if lastHistory.Level > 0 {
-		return (100-lastHistory.Level)*(-1000) - rand.Intn(1000)
-	}
-
-	n := 0
-	from := self.m.Concepts[connect.From]
-	to := self.m.Concepts[connect.To]
-
-	if from.What == WORD {
-		n += 200
-	} else if from.What == SENTENCE {
-		n += 400
-	} else if from.What == AUDIO {
-		if to.What == SENTENCE {
-			n += 100
+func (self ConnectSorter) Less(i, j int) bool {
+	left, right := self.l[i], self.l[j]
+	leftLastHistory := left.Histories[len(left.Histories)-1]
+	rightLastHistory := right.Histories[len(right.Histories)-1]
+	if leftLastHistory.Level > 0 && rightLastHistory.Level > 0 { // review first
+		if leftLastHistory.Level < rightLastHistory.Level { // review low level first
+			return true
+		} else if leftLastHistory.Level > rightLastHistory.Level {
+			return false
+		} else if leftLastHistory.Level == rightLastHistory.Level { // same level
+			if rand.Intn(2) == 1 { // randomize
+				return true
+			}
+			return false
 		}
+	} else if leftLastHistory.Level > 0 && rightLastHistory.Level == 0 { // review first
+		return true
+	} else if leftLastHistory.Level == 0 && rightLastHistory.Level > 0 { // learn new later
+		return false
+	} else if leftLastHistory.Level == 0 && rightLastHistory.Level == 0 { // new connect
+		leftLesson := self.getLesson(left)
+		rightLesson := self.getLesson(right)
+		if leftLesson < rightLesson { // learn earlier lesson first
+			return true
+		} else if leftLesson > rightLesson {
+			return false
+		} else { // same lesson
+			leftTypeOrder := self.getTypeOrder(left)
+			rightTypeOrder := self.getTypeOrder(right)
+			if leftTypeOrder < rightTypeOrder {
+				return true
+			} else if leftTypeOrder > rightTypeOrder {
+				return false
+			} else {
+				return leftLastHistory.Time.Before(rightLastHistory.Time)
+			}
+			return true
+		}
+		return true
 	}
-
-	return n
+	return false
 }
 
-func (self ConnectSorter) Less(i, j int) bool {
-	x, y := self.pri(self.l[i]), self.pri(self.l[j])
-	if x == y {
-		return self.l[i].Histories[len(self.l[i].Histories)-1].Time.Before(self.l[j].Histories[len(self.l[j].Histories)-1].Time)
+var lessonPattern = regexp.MustCompile("[0-9]+")
+
+func (self ConnectSorter) getLesson(c *Connect) string {
+	audio := self.m.Concepts[c.From]
+	if audio.What != AUDIO {
+		audio = self.m.Concepts[c.To]
 	}
-	return x < y
+	return lessonPattern.FindStringSubmatch(audio.File)[0]
+}
+
+func (self ConnectSorter) getTypeOrder(c *Connect) int {
+	fromWhat := self.m.Concepts[c.From].What
+	toWhat := self.m.Concepts[c.To].What
+	if fromWhat == AUDIO && toWhat == WORD {
+		return 1
+	} else if fromWhat == AUDIO && toWhat == SENTENCE {
+		return 2
+	}
+	return 3
 }
 
 func (self ConnectSorter) Swap(i, j int) {
