@@ -56,7 +56,6 @@ func main() {
 
 	getPendingConnect := func(now time.Time) []*Connect {
 		var connects []*Connect
-		stat := make(map[int]int)
 		for _, connect := range mem.Connects {
 			from := mem.Concepts[connect.From]
 			if (from.What == WORD || from.What == SENTENCE) && from.Incomplete {
@@ -69,10 +68,6 @@ func main() {
 			}
 
 			connects = append(connects, connect)
-			stat[lastHistory.Level]++
-		}
-		for k, v := range stat {
-			fmt.Printf("%d %d\n", k, v)
 		}
 		return connects
 	}
