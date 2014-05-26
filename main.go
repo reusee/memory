@@ -255,6 +255,9 @@ func main() {
 			fmt.Printf("%s\n", to.File)
 			to.Play()
 			fmt.Scanf("%s\n", &from.Text)
+			if from.Text == "" {
+				continue
+			}
 			from.Incomplete = false
 			mem.Save()
 		}
