@@ -323,24 +323,30 @@ func (self ConnectSorter) Less(i, j int) bool {
 	left, right := self.l[i], self.l[j]
 	leftLastHistory := left.Histories[len(left.Histories)-1]
 	rightLastHistory := right.Histories[len(right.Histories)-1]
+	leftLesson := self.getLesson(left)
+	rightLesson := self.getLesson(right)
 	if leftLastHistory.Level > 0 && rightLastHistory.Level > 0 { // review first
 		if leftLastHistory.Level < rightLastHistory.Level { // review low level first
 			return true
 		} else if leftLastHistory.Level > rightLastHistory.Level {
 			return false
 		} else if leftLastHistory.Level == rightLastHistory.Level { // same level
-			if rand.Intn(2) == 1 { // randomize
+			if leftLesson < rightLesson { // review earlier lesson first
 				return true
+			} else if leftLesson > rightLesson {
+				return false
+			} else { // randomize
+				if rand.Intn(2) == 1 { // randomize
+					return true
+				}
+				return false
 			}
-			return false
 		}
 	} else if leftLastHistory.Level > 0 && rightLastHistory.Level == 0 { // review first
 		return true
 	} else if leftLastHistory.Level == 0 && rightLastHistory.Level > 0 { // learn new later
 		return false
 	} else if leftLastHistory.Level == 0 && rightLastHistory.Level == 0 { // new connect
-		leftLesson := self.getLesson(left)
-		rightLesson := self.getLesson(right)
 		if leftLesson < rightLesson { // learn earlier lesson first
 			return true
 		} else if leftLesson > rightLesson {
