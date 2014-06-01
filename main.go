@@ -1,11 +1,16 @@
 package main
 
+/*
+#include <clutter/clutter.h>
+#cgo pkg-config: clutter-1.0 gobject-2.0
+*/
+import "C"
+
 import (
 	"crypto/sha512"
 	"encoding/ascii85"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -15,6 +20,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unsafe"
 
 	termbox "github.com/nsf/termbox-go"
 )
@@ -70,19 +76,6 @@ func main() {
 			connects = append(connects, connect)
 		}
 		return connects
-	}
-
-	printHistories := func(connect *Connect, width, height int) {
-		y := height/3 + 2
-		lastTime := time.Now()
-		for i := len(connect.Histories) - 1; i >= 0; i-- {
-			t := connect.Histories[i].Time
-			p(width/3, y, formatDuration(lastTime.Sub(t)))
-			lastTime = t
-			y++
-			p(width/3, y, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute()))
-			y++
-		}
 	}
 
 	cmd := os.Args[1]
@@ -165,79 +158,154 @@ func main() {
 		connects := getPendingConnect(time.Now())
 		// sort
 		sort.Sort(ConnectSorter{connects, mem})
+
+		// ui
+		var setText, setHint, setHistory func(string)
+		keys := make(chan rune)
+		ready := make(chan bool)
+		go func() {
+			// init
+			var argc C.int
+			C.clutter_init(&argc, nil)
+
+			// stage
+			stage := C.clutter_stage_new()
+			C.clutter_actor_set_background_color(stage, C.clutter_color_get_static(C.CLUTTER_COLOR_BLACK))
+			gconnect(stage, "destroy", func() {
+				C.clutter_main_quit()
+			})
+			C.clutter_actor_show(stage)
+			gconnect(stage, "key-press-event", func(_, ev interface{}) {
+				code := C.clutter_event_get_key_unicode((*C.ClutterEvent)(ev.(unsafe.Pointer)))
+				select {
+				case keys <- rune(code):
+				default:
+				}
+			})
+			layout := C.clutter_box_layout_new()
+			C.clutter_box_layout_set_orientation((*C.ClutterBoxLayout)(unsafe.Pointer(layout)),
+				C.CLUTTER_ORIENTATION_VERTICAL)
+			C.clutter_actor_set_layout_manager(stage, layout)
+
+			// text
+			text := C.clutter_text_new()
+			C.clutter_text_set_use_markup(asText(text), C.TRUE)
+			C.clutter_text_set_markup(asText(text), toGStr(`<span font="32">hello</span>`))
+			C.clutter_text_set_color(asText(text), C.clutter_color_get_static(C.CLUTTER_COLOR_WHITE))
+			C.clutter_actor_add_child(stage, text)
+			setText = func(s string) {
+				run(func() {
+					C.clutter_text_set_markup(asText(text), toGStr(fmt.Sprintf(`<span font="32">%s</span>`, s)))
+				})
+			}
+
+			// hint
+			hint := C.clutter_text_new()
+			C.clutter_text_set_color(asText(hint), C.clutter_color_get_static(C.CLUTTER_COLOR_WHITE))
+			C.clutter_actor_add_child(stage, hint)
+			setHint = func(s string) {
+				run(func() {
+					C.clutter_text_set_text(asText(hint), toGStr(s))
+				})
+			}
+
+			// history
+			history := C.clutter_text_new()
+			C.clutter_text_set_color(asText(history), C.clutter_color_get_static(C.CLUTTER_COLOR_WHITE))
+			C.clutter_actor_add_child(stage, history)
+			setHistory = func(s string) {
+				run(func() {
+					C.clutter_text_set_text(asText(history), toGStr(s))
+				})
+			}
+
+			// main
+			close(ready)
+			C.clutter_main()
+			os.Exit(0)
+		}()
+		<-ready
+
 		// train
-		err := termbox.Init()
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer termbox.Close()
-		width, height := termbox.Size()
 		t0 := time.Now()
 		for i, connect := range connects {
 			if i > 80 || time.Now().Sub(t0) > time.Minute*10 {
 				break
 			}
-			termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+			setHint("")
+			setText("")
+
+			var lines []string
+			lastTime := time.Now()
+			for i := len(connect.Histories) - 1; i >= 0; i-- {
+				t := connect.Histories[i].Time
+				lines = append(lines, formatDuration(lastTime.Sub(t)))
+				lastTime = t
+				lines = append(lines, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute()))
+			}
+			setHistory(strings.Join(lines, "\n"))
+
 			from := mem.Concepts[connect.From]
 			to := mem.Concepts[connect.To]
 			switch from.What {
 
 			case AUDIO: // play audio
-				printHistories(connect, width, height)
-				p(width/3, height/3+1, ">                                                                                  ")
+				setHint("playing...")
 				from.Play()
 				if to.What == WORD {
-					p(width/3, height/3+1, "press any key to show text")
-					termbox.PollEvent()
-					p(width/3, height/3, to.Text)
+					setHint("press any key to show answer")
+					<-keys
+					setText(to.Text)
 				}
 			repeat:
-				p(width/3, height/3+1, "press Enter to levelup, Left to reset level, Tab to exit, other keys to repeat")
-				ev := termbox.PollEvent()
-				switch ev.Key {
-				case termbox.KeyEnter:
+				setHint("press Enter to levelup, Backspace to reset level, Space to repeat")
+			read_key:
+				key := <-keys
+				switch key {
+				case '\r':
 					lastHistory := connect.Histories[len(connect.Histories)-1]
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
-				case termbox.KeyArrowLeft:
+				case '\b':
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
-				case termbox.KeyTab:
-					return
-				default:
-					p(width/3, height/3+1, ">                                                                                 ")
+				case ' ':
+					fmt.Printf("%v\n", key)
+					setHint("playing...")
 					from.Play()
-					p(width/3, height/3+1, "                                                                                  ")
+					setHint("")
 					goto repeat
+				default:
+					goto read_key
 				}
 
 			case WORD: // show text
-				p(width/3, height/3, from.Text)
-				printHistories(connect, width, height)
-				p(width/3, height/3+1, "press any key to play audio")
-				termbox.PollEvent()
-				to := mem.Concepts[connect.To]
+				setText(from.Text)
+				setHint("press any key to play audio")
+				<-keys
 			repeat2:
-				p(width/3, height/3+1, ">                                                                                   ")
-				termbox.Flush()
+				setHint("playing...")
 				to.Play()
-				p(width/3, height/3+1, "press Enter to levelup, Left to reset level, Tab to exit, other keys to repeat")
-				ev := termbox.PollEvent()
-				switch ev.Key {
-				case termbox.KeyEnter:
+				setHint("press Enter to levelup, Backspace to reset level, Space to repeat")
+			read_key2:
+				key := <-keys
+				switch key {
+				case '\r':
 					lastHistory := connect.Histories[len(connect.Histories)-1]
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
-				case termbox.KeyArrowLeft:
+				case '\b':
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
-				case termbox.KeyTab:
-					return
-				default:
+				case ' ':
+					fmt.Printf("%v\n", key)
 					goto repeat2
+				default:
+					goto read_key2
 				}
+
 			default:
-				panic("fixme") //TODO
+				panic("impossible")
 			}
 		}
 
