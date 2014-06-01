@@ -225,10 +225,9 @@ func main() {
 		<-ready
 
 		// train
-		t0 := time.Now()
 		for i, connect := range connects {
-			if i > 80 || time.Now().Sub(t0) > time.Minute*10 {
-				break
+			if i > 80 {
+				os.Exit(0)
 			}
 			setHint("")
 			setText("")
