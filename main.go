@@ -48,11 +48,6 @@ func init() {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Printf("no command\n")
-		os.Exit(0)
-	}
-
 	mem := &Memory{
 		Concepts: make(map[string]*Concept),
 		Connects: make(map[string]*Connect),
