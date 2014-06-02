@@ -77,7 +77,12 @@ func main() {
 		return connects
 	}
 
-	cmd := os.Args[1]
+	var cmd string
+	if len(os.Args) == 1 {
+		cmd = "train"
+	} else {
+		cmd = os.Args[1]
+	}
 	// add audio files
 	if cmd == "add" {
 		if len(os.Args) < 3 {
@@ -235,6 +240,15 @@ func main() {
 		}()
 		<-ready
 
+		hint.Set("press f to start")
+		for {
+			key := <-keys
+			if key == 'f' {
+				break
+			}
+		}
+		hint.Set("")
+
 		// train
 		for _, connect := range connects {
 			hint.Set("")
@@ -275,7 +289,6 @@ func main() {
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
 				case ' ':
-					fmt.Printf("%v\n", key)
 					hint.Set("playing...")
 					from.Play()
 					hint.Set("")
@@ -303,7 +316,6 @@ func main() {
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
 				case ' ':
-					fmt.Printf("%v\n", key)
 					goto repeat2
 				default:
 					goto read_key2
@@ -352,11 +364,8 @@ func main() {
 		for _, date := range dates {
 			fmt.Printf("%s %d\n", date, counter[date])
 		}
-
-	} else {
-		fmt.Printf("unknown command\n")
-		os.Exit(0)
 	}
+
 }
 
 type ConnectSorter struct {
