@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 	"unsafe"
@@ -78,6 +79,12 @@ func main() {
 	} else {
 		cmd = os.Args[1]
 	}
+	max := 80
+	if len(os.Args) == 2 && regexp.MustCompile(`[0-9]+`).MatchString(os.Args[1]) {
+		max, _ = strconv.Atoi(os.Args[1])
+		cmd = "train"
+	}
+
 	// add audio files
 	if cmd == "add" {
 		if len(os.Args) < 3 {
@@ -157,7 +164,6 @@ func main() {
 		connects := getPendingConnect(time.Now())
 		// sort
 		sort.Sort(ConnectSorter{connects, mem})
-		max := 80
 		if len(connects) > max {
 			connects = connects[:max]
 		}
