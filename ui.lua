@@ -1,6 +1,6 @@
 Stage{
 	id = "stage",
-	bgcolor = "#000000",
+	bgcolor = "#000015",
 	layout = VBox{},
 	Actor{ y_expand = true }, -- padding
 	Text{
