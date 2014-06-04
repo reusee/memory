@@ -11,7 +11,6 @@ import (
 	"encoding/ascii85"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -23,6 +22,8 @@ import (
 	"strings"
 	"time"
 	"unsafe"
+
+	ct "./clutter-helper"
 )
 
 var rootPath string
@@ -169,24 +170,37 @@ func main() {
 		}
 
 		// ui
-		type Text struct {
-			Set func(s string)
-		}
-		var text, hint, history Text
+		var setText, setHint, setHistory func(s string)
 		keys := make(chan rune)
 		ready := make(chan bool)
 		go func() {
-			// init
-			var argc C.int
-			C.clutter_init(&argc, nil)
-
-			// stage
-			stage := C.clutter_stage_new()
-			C.clutter_actor_set_background_color(stage, C.clutter_color_get_static(C.CLUTTER_COLOR_BLACK))
+			ct.Init()
+			bindings := ct.FromLua(`
+			Stage{
+				id = "stage",
+				bgcolor = "#000000",
+				layout = VBox{},
+				Actor{ y_expand = true }, -- padding
+				Text{
+					id = "text",
+					color = "#0099CC",
+					use_markup = true,
+				},
+				Text{
+					id = "hint",
+					color = "#EEEEEE",
+				},
+				Text{
+					id = "history",
+					color = "#666666",
+				},
+				Actor{ y_expand = true }, -- padding
+			}
+			`)
+			stage := (*C.ClutterActor)(bindings["stage"])
 			gconnect(stage, "destroy", func() {
-				C.clutter_main_quit()
+				ct.Quit()
 			})
-			C.clutter_actor_show(stage)
 			gconnect(stage, "key-press-event", func(_, ev interface{}) {
 				code := C.clutter_event_get_key_unicode((*C.ClutterEvent)(ev.(unsafe.Pointer)))
 				select {
@@ -194,66 +208,42 @@ func main() {
 				default:
 				}
 			})
-			// layout
-			layout := C.clutter_box_layout_new()
-			C.clutter_box_layout_set_orientation((*C.ClutterBoxLayout)(unsafe.Pointer(layout)),
-				C.CLUTTER_ORIENTATION_VERTICAL)
-			C.clutter_actor_set_layout_manager(stage, layout)
-			// pad
-			pad := C.clutter_actor_new()
-			C.clutter_actor_set_y_expand(pad, C.TRUE)
-			C.clutter_actor_add_child(stage, pad)
-
-			newText := func(color *C.ClutterColor, format string) Text {
-				text := C.clutter_text_new()
-				C.clutter_text_set_use_markup(asText(text), C.TRUE)
-				C.clutter_text_set_color(asText(text), color)
-				C.clutter_actor_add_child(stage, text)
-				return Text{
-					Set: func(s string) {
-						run(func() {
-							C.clutter_text_set_markup(asText(text), toGStr(fmt.Sprintf(format, s)))
-						})
-					},
-				}
+			setText = func(s string) {
+				run(func() {
+					C.clutter_text_set_markup(asText(bindings["text"]), toGStr(fmt.Sprintf(`<span font="32">%s</span>`, s)))
+				})
 			}
-			color := func(s string) *C.ClutterColor {
-				var c C.ClutterColor
-				if C.clutter_color_from_string(&c, toGStr(s)) != C.TRUE {
-					log.Fatalf("wrong color format %s", s)
-				}
-				return &c
+			setHint = func(s string) {
+				run(func() {
+					C.clutter_text_set_text(asText(bindings["hint"]), toGStr(s))
+				})
 			}
-
-			text = newText(color("#0099CC"), `<span font="32">%s</span>`)
-			hint = newText(color("#EEEEEE"), `<span font="14">%s</span>`)
-			history = newText(color("#666666"), `<span font="16">%s</span>`)
-
-			// pad
-			pad2 := C.clutter_actor_new()
-			C.clutter_actor_set_y_expand(pad2, C.TRUE)
-			C.clutter_actor_add_child(stage, pad2)
+			setHistory = func(s string) {
+				run(func() {
+					C.clutter_text_set_text(asText(bindings["history"]), toGStr(s))
+				})
+			}
 
 			// main
 			close(ready)
-			C.clutter_main()
+			ct.Main()
 			os.Exit(0)
 		}()
 		<-ready
 
-		hint.Set("press f to start")
+		setHint("press f to start")
 		for {
 			key := <-keys
 			if key == 'f' {
 				break
 			}
 		}
-		hint.Set("")
+		setHint("")
 
 		// train
 		for _, connect := range connects {
-			hint.Set("")
-			text.Set("")
+			setHint("")
+			setText("")
 
 			var lines []string
 			lastTime := time.Now()
@@ -263,22 +253,22 @@ func main() {
 				lastTime = t
 				lines = append(lines, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute()))
 			}
-			history.Set(strings.Join(lines, "\n"))
+			setHistory(strings.Join(lines, "\n"))
 
 			from := mem.Concepts[connect.From]
 			to := mem.Concepts[connect.To]
 			switch from.What {
 
 			case AUDIO: // play audio
-				hint.Set("playing...")
+				setHint("playing...")
 				from.Play()
 				if to.What == WORD {
-					hint.Set("press any key to show answer")
+					setHint("press any key to show answer")
 					<-keys
-					text.Set(to.Text)
+					setText(to.Text)
 				}
 			repeat:
-				hint.Set("press Enter to levelup, Backspace to reset level, Space to repeat")
+				setHint("press Enter to levelup, Backspace to reset level, Space to repeat")
 			read_key:
 				key := <-keys
 				switch key {
@@ -290,22 +280,22 @@ func main() {
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
 				case ' ':
-					hint.Set("playing...")
+					setHint("playing...")
 					from.Play()
-					hint.Set("")
+					setHint("")
 					goto repeat
 				default:
 					goto read_key
 				}
 
 			case WORD: // show text
-				text.Set(from.Text)
-				hint.Set("press any key to play audio")
+				setText(from.Text)
+				setHint("press any key to play audio")
 				<-keys
 			repeat2:
-				hint.Set("playing...")
+				setHint("playing...")
 				to.Play()
-				hint.Set("press Enter to levelup, Backspace to reset level, Space to repeat")
+				setHint("press Enter to levelup, Backspace to reset level, Space to repeat")
 			read_key2:
 				key := <-keys
 				switch key {
