@@ -11,6 +11,7 @@ import (
 	"encoding/ascii85"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"math/rand"
 	"os"
@@ -175,28 +176,12 @@ func main() {
 		ready := make(chan bool)
 		go func() {
 			ct.Init()
-			bindings := ct.FromLua(`
-			Stage{
-				id = "stage",
-				bgcolor = "#000000",
-				layout = VBox{},
-				Actor{ y_expand = true }, -- padding
-				Text{
-					id = "text",
-					color = "#0099CC",
-					use_markup = true,
-				},
-				Text{
-					id = "hint",
-					color = "#EEEEEE",
-				},
-				Text{
-					id = "history",
-					color = "#666666",
-				},
-				Actor{ y_expand = true }, -- padding
+			_, path, _, _ := runtime.Caller(0)
+			ui, err := ioutil.ReadFile(filepath.Join(filepath.Dir(path), "ui.lua"))
+			if err != nil {
+				log.Fatal(err)
 			}
-			`)
+			bindings := ct.FromLua(string(ui))
 			stage := (*C.ClutterActor)(bindings["stage"])
 			gconnect(stage, "destroy", func() {
 				ct.Quit()
@@ -268,15 +253,15 @@ func main() {
 					setText(to.Text)
 				}
 			repeat:
-				setHint("press Enter to levelup, Backspace to reset level, Space to repeat")
+				setHint("press G to levelup, T to reset level, Space to repeat")
 			read_key:
 				key := <-keys
 				switch key {
-				case '\r':
+				case 'g':
 					lastHistory := connect.Histories[len(connect.Histories)-1]
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
-				case '\b':
+				case 't':
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
 				case ' ':
@@ -295,15 +280,15 @@ func main() {
 			repeat2:
 				setHint("playing...")
 				to.Play()
-				setHint("press Enter to levelup, Backspace to reset level, Space to repeat")
+				setHint("press G to levelup, T to reset level, Space to repeat")
 			read_key2:
 				key := <-keys
 				switch key {
-				case '\r':
+				case 'g':
 					lastHistory := connect.Histories[len(connect.Histories)-1]
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
-				case '\b':
+				case 't':
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
 				case ' ':
