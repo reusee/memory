@@ -171,50 +171,44 @@ func main() {
 		}
 
 		// ui
-		var setText, setHint, setHistory func(s string)
+		ct.Init()
+		_, path, _, _ := runtime.Caller(0)
+		ui, err := ioutil.ReadFile(filepath.Join(filepath.Dir(path), "ui.lua"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		bindings := ct.FromLua(string(ui))
+		stage := (*C.ClutterActor)(bindings["stage"])
+		gconnect(stage, "destroy", func() {
+			ct.Quit()
+		})
 		keys := make(chan rune)
-		ready := make(chan bool)
+		gconnect(stage, "key-press-event", func(_, ev interface{}) {
+			code := C.clutter_event_get_key_unicode((*C.ClutterEvent)(ev.(unsafe.Pointer)))
+			select {
+			case keys <- rune(code):
+			default:
+			}
+		})
+		setText := func(s string) {
+			run(func() {
+				C.clutter_text_set_markup(asText(bindings["text"]), toGStr(fmt.Sprintf(`<span font="32">%s</span>`, s)))
+			})
+		}
+		setHint := func(s string) {
+			run(func() {
+				C.clutter_text_set_text(asText(bindings["hint"]), toGStr(s))
+			})
+		}
+		setHistory := func(s string) {
+			run(func() {
+				C.clutter_text_set_text(asText(bindings["history"]), toGStr(s))
+			})
+		}
 		go func() {
-			ct.Init()
-			_, path, _, _ := runtime.Caller(0)
-			ui, err := ioutil.ReadFile(filepath.Join(filepath.Dir(path), "ui.lua"))
-			if err != nil {
-				log.Fatal(err)
-			}
-			bindings := ct.FromLua(string(ui))
-			stage := (*C.ClutterActor)(bindings["stage"])
-			gconnect(stage, "destroy", func() {
-				ct.Quit()
-			})
-			gconnect(stage, "key-press-event", func(_, ev interface{}) {
-				code := C.clutter_event_get_key_unicode((*C.ClutterEvent)(ev.(unsafe.Pointer)))
-				select {
-				case keys <- rune(code):
-				default:
-				}
-			})
-			setText = func(s string) {
-				run(func() {
-					C.clutter_text_set_markup(asText(bindings["text"]), toGStr(fmt.Sprintf(`<span font="32">%s</span>`, s)))
-				})
-			}
-			setHint = func(s string) {
-				run(func() {
-					C.clutter_text_set_text(asText(bindings["hint"]), toGStr(s))
-				})
-			}
-			setHistory = func(s string) {
-				run(func() {
-					C.clutter_text_set_text(asText(bindings["history"]), toGStr(s))
-				})
-			}
-
-			// main
-			close(ready)
 			ct.Main()
 			os.Exit(0)
 		}()
-		<-ready
 
 		setHint("press f to start")
 		for {
