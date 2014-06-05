@@ -24,7 +24,7 @@ import (
 	"time"
 	"unsafe"
 
-	ct "./clutter-helper"
+	ct "github.com/reusee/clutter-helper"
 )
 
 var rootPath string
