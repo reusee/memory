@@ -353,7 +353,13 @@ func (self ConnectSorter) Less(i, j int) bool {
 	rightLastHistory := right.Histories[len(right.Histories)-1]
 	leftLesson := self.getLesson(left)
 	rightLesson := self.getLesson(right)
-	if leftLastHistory.Level > 0 && rightLastHistory.Level > 0 { // review first
+	leftLevelOrder := self.getLevelOrder(left)
+	rightLevelOrder := self.getLevelOrder(right)
+	if leftLevelOrder < rightLevelOrder {
+		return true
+	} else if leftLevelOrder > rightLevelOrder {
+		return false
+	} else if leftLevelOrder == rightLevelOrder && (leftLevelOrder == 1 || leftLevelOrder == 3) { // old connect
 		if leftLastHistory.Level < rightLastHistory.Level { // review low level first
 			return true
 		} else if leftLastHistory.Level > rightLastHistory.Level {
@@ -370,11 +376,7 @@ func (self ConnectSorter) Less(i, j int) bool {
 				return false
 			}
 		}
-	} else if leftLastHistory.Level > 0 && rightLastHistory.Level == 0 { // review first
-		return true
-	} else if leftLastHistory.Level == 0 && rightLastHistory.Level > 0 { // learn new later
-		return false
-	} else if leftLastHistory.Level == 0 && rightLastHistory.Level == 0 { // new connect
+	} else if leftLevelOrder == rightLevelOrder && leftLevelOrder == 2 { // new connect
 		if leftLesson < rightLesson { // learn earlier lesson first
 			return true
 		} else if leftLesson > rightLesson {
@@ -415,6 +417,17 @@ func (self ConnectSorter) getTypeOrder(c *Connect) int {
 		return 2
 	}
 	return 3
+}
+
+func (self ConnectSorter) getLevelOrder(c *Connect) int {
+	lastHistory := c.Histories[len(c.Histories)-1]
+	if lastHistory.Level >= 7 { // 7 -
+		return 3
+	}
+	if lastHistory.Level > 0 { // 1 - 6
+		return 1
+	}
+	return 2 // 0
 }
 
 func (self ConnectSorter) Swap(i, j int) {
