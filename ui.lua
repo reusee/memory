@@ -5,7 +5,6 @@ Stage{
 	height = 600,
 	title = "memory",
 	layout = VBox{},
-	Actor{ y_expand = true }, -- padding
 	Text{
 		id = "text",
 		color = "#0099CC",
@@ -20,5 +19,4 @@ Stage{
 		color = "#666666",
 		margin_top = 20,
 	},
-	Actor{ y_expand = true }, -- padding
 }
