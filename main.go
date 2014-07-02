@@ -81,7 +81,7 @@ func main() {
 	} else {
 		cmd = os.Args[1]
 	}
-	max := 80
+	max := 20
 	if len(os.Args) == 2 && regexp.MustCompile(`[0-9]+`).MatchString(os.Args[1]) {
 		max, _ = strconv.Atoi(os.Args[1])
 		cmd = "train"
