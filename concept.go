@@ -39,6 +39,6 @@ func (self *Concept) Key() string {
 }
 
 func (self *Concept) Play() {
-	cmd := exec.Command("/usr/bin/env", "mplayer", filepath.Join(rootPath, "files", self.File))
+	cmd := exec.Command("mpv", filepath.Join(rootPath, "files", self.File))
 	cmd.Run()
 }
