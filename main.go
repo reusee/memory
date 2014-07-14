@@ -1,11 +1,5 @@
 package main
 
-/*
-#include <clutter/clutter.h>
-#cgo pkg-config: clutter-1.0 gobject-2.0
-*/
-import "C"
-
 import (
 	"crypto/sha512"
 	"encoding/ascii85"
@@ -22,9 +16,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unsafe"
 
-	ct "github.com/reusee/clutter-helper"
+	//pyqt "github.com/reusee/go-pyqt5"
+	pyqt "./go-pyqt5"
 )
 
 var rootPath string
@@ -171,49 +165,53 @@ func main() {
 		}
 
 		// ui
-		ct.Init()
-		_, path, _, _ := runtime.Caller(0)
-		ui, err := ioutil.ReadFile(filepath.Join(filepath.Dir(path), "ui.lua"))
+		qt, err := pyqt.New(`
+from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy
+from PyQt5.QtCore import Qt
+class Win(QWidget):
+	def __init__(self, **kwds):
+		super().__init__(**kwds)
+	def keyPressEvent(self, ev):
+		Emit("key", ev.key())
+win = Win(styleSheet = "background-color: black;")
+hint = QLabel(alignment = Qt.AlignHCenter, styleSheet = "color: white; font-size: 16px;")
+hint.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+text = QLabel(alignment = Qt.AlignHCenter, styleSheet = "color: #0099CC; font-size: 32px;")
+history = QLabel(alignment = Qt.AlignHCenter, styleSheet = "color: grey; font-size: 16px;")
+layout = QVBoxLayout()
+layout.addStretch()
+layout.addWidget(hint)
+layout.addWidget(text)
+layout.addWidget(history)
+layout.addStretch()
+win.setLayout(layout)
+win.showMaximized()
+Connect("set-hint", lambda s: hint.setText(s))
+Connect("set-text", lambda s: text.setText(s))
+Connect("set-history", lambda s: history.setText(s))
+		`)
 		if err != nil {
 			log.Fatal(err)
 		}
-		bindings := ct.FromLua(string(ui))
-		stage := (*C.ClutterActor)(bindings["stage"])
-		gconnect(stage, "destroy", func() {
-			ct.Quit()
+		defer qt.Close()
+		qt.OnClose(func() {
+			os.Exit(0)
 		})
 		keys := make(chan rune)
-		gconnect(stage, "key-press-event", func(_, ev interface{}) {
-			code := C.clutter_event_get_key_unicode((*C.ClutterEvent)(ev.(unsafe.Pointer)))
+		qt.Connect("key", func(key float64) {
 			select {
-			case keys <- rune(code):
+			case keys <- rune(key):
 			default:
 			}
 		})
-		setText := func(s string) {
-			run(func() {
-				C.clutter_text_set_markup(asText(bindings["text"]), toGStr(fmt.Sprintf(`<span font="32">%s</span>`, s)))
-			})
-		}
-		setHint := func(s string) {
-			run(func() {
-				C.clutter_text_set_text(asText(bindings["hint"]), toGStr(s))
-			})
-		}
-		setHistory := func(s string) {
-			run(func() {
-				C.clutter_text_set_text(asText(bindings["history"]), toGStr(s))
-			})
-		}
-		go func() {
-			ct.Main()
-			os.Exit(0)
-		}()
+		setHint := func(s string) { qt.Emit("set-hint", s) }
+		setText := func(s string) { qt.Emit("set-text", s) }
+		setHistory := func(s string) { qt.Emit("set-history", s) }
 
 		setHint("press f to start")
 		for {
 			key := <-keys
-			if key == 'f' {
+			if key == 'F' {
 				break
 			}
 		}
@@ -251,11 +249,11 @@ func main() {
 			read_key:
 				key := <-keys
 				switch key {
-				case 'g':
+				case 'G':
 					lastHistory := connect.Histories[len(connect.Histories)-1]
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
-				case 't':
+				case 'T':
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
 				case ' ':
@@ -278,11 +276,11 @@ func main() {
 			read_key2:
 				key := <-keys
 				switch key {
-				case 'g':
+				case 'G':
 					lastHistory := connect.Histories[len(connect.Histories)-1]
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 					mem.Save()
-				case 't':
+				case 'T':
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
 					mem.Save()
 				case ' ':
