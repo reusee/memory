@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type Memory struct {
 	Concepts map[string]*Concept
 	Connects map[string]*Connect
 	Serial   int
+	saveLock sync.Mutex
 }
 
 func (self *Memory) AddConcept(concept *Concept) (exists bool) {
@@ -43,6 +45,8 @@ func (self *Memory) NextSerial() int {
 }
 
 func (self *Memory) Save() {
+	self.saveLock.Lock()
+	defer self.saveLock.Unlock()
 	buf := new(bytes.Buffer)
 	err := json.NewEncoder(buf).Encode(self)
 	if err != nil {

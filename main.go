@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	//pyqt "github.com/reusee/go-pyqt5"
@@ -176,7 +177,7 @@ class Win(QWidget):
 win = Win(styleSheet = "background-color: black;")
 hint = QLabel(alignment = Qt.AlignHCenter, styleSheet = "color: white; font-size: 16px;")
 hint.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-text = QLabel(alignment = Qt.AlignHCenter, styleSheet = "color: #0099CC; font-size: 32px;")
+text = QLabel(alignment = Qt.AlignHCenter, styleSheet = "color: #0099CC; font-size: 64px;")
 history = QLabel(styleSheet = "color: grey; font-size: 16px;")
 layout = QVBoxLayout()
 layout.addStretch()
@@ -217,6 +218,15 @@ Connect("set-history", lambda s: history.setText(s))
 		}
 		setHint("")
 
+		wg := new(sync.WaitGroup)
+		save := func() {
+			wg.Add(1)
+			go func() {
+				mem.Save()
+				wg.Done()
+			}()
+		}
+
 		// train
 		for _, connect := range connects {
 			setHint("")
@@ -252,10 +262,10 @@ Connect("set-history", lambda s: history.setText(s))
 				case 'G':
 					lastHistory := connect.Histories[len(connect.Histories)-1]
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
-					mem.Save()
+					save()
 				case 'T':
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
-					mem.Save()
+					save()
 				case ' ':
 					setHint("playing...")
 					from.Play()
@@ -279,10 +289,10 @@ Connect("set-history", lambda s: history.setText(s))
 				case 'G':
 					lastHistory := connect.Histories[len(connect.Histories)-1]
 					connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
-					mem.Save()
+					save()
 				case 'T':
 					connect.Histories = append(connect.Histories, History{Level: 0, Time: time.Now()})
-					mem.Save()
+					save()
 				case ' ':
 					goto repeat2
 				default:
@@ -293,6 +303,8 @@ Connect("set-history", lambda s: history.setText(s))
 				panic("impossible")
 			}
 		}
+
+		wg.Wait()
 
 		// complete connection
 	} else if cmd == "complete" {
