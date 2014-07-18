@@ -137,7 +137,7 @@ func main() {
 					From: concept.Key(),
 					To:   textConcept.Key(),
 					Histories: []History{
-						History{Level: 0, Time: time.Now()},
+						{Level: 0, Time: time.Now()},
 					},
 				})
 				if what == WORD {
@@ -145,7 +145,7 @@ func main() {
 						From: textConcept.Key(),
 						To:   concept.Key(),
 						Histories: []History{
-							History{Level: 0, Time: time.Now()},
+							{Level: 0, Time: time.Now()},
 						},
 					})
 				}
@@ -332,7 +332,7 @@ Connect("set-text", lambda s: text.setText(s))
 			}
 		}
 		var dates []string
-		for date, _ := range counter {
+		for date := range counter {
 			dates = append(dates, date)
 		}
 		sort.Strings(dates)
