@@ -178,18 +178,15 @@ win = Win(styleSheet = "background-color: black;")
 hint = QLabel(alignment = Qt.AlignHCenter, styleSheet = "color: white; font-size: 16px;")
 hint.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
 text = QLabel(alignment = Qt.AlignHCenter, styleSheet = "color: #0099CC; font-size: 64px;")
-history = QLabel(styleSheet = "color: grey; font-size: 16px;")
 layout = QVBoxLayout()
 layout.addStretch()
 layout.addWidget(hint)
 layout.addWidget(text)
 layout.addStretch()
-layout.addWidget(history)
 win.setLayout(layout)
 win.showMaximized()
 Connect("set-hint", lambda s: hint.setText(s))
 Connect("set-text", lambda s: text.setText(s))
-Connect("set-history", lambda s: history.setText(s))
 		`)
 		if err != nil {
 			log.Fatal(err)
@@ -207,7 +204,6 @@ Connect("set-history", lambda s: history.setText(s))
 		})
 		setHint := func(s string) { qt.Emit("set-hint", s) }
 		setText := func(s string) { qt.Emit("set-text", s) }
-		setHistory := func(s string) { qt.Emit("set-history", s) }
 
 		setHint("press f to start")
 		for {
@@ -240,7 +236,6 @@ Connect("set-history", lambda s: history.setText(s))
 				lastTime = t
 				lines = append(lines, fmt.Sprintf("%d %d-%02d-%02d %02d:%02d", connect.Histories[i].Level, t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute()))
 			}
-			setHistory(strings.Join(lines, "\n"))
 
 			from := mem.Concepts[connect.From]
 			to := mem.Concepts[connect.To]
