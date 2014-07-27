@@ -45,8 +45,10 @@ func (self *Memory) NextSerial() int {
 }
 
 func (self *Memory) Save() {
+	t0 := time.Now()
 	self.saveLock.Lock()
 	defer self.saveLock.Unlock()
+	// encode
 	buf := new(bytes.Buffer)
 	err := json.NewEncoder(buf).Encode(self)
 	if err != nil {
@@ -69,25 +71,13 @@ func (self *Memory) Save() {
 		log.Fatal(err)
 	}
 	out.Close()
-	// test
-	f, err := os.Open(tmpPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	mem := new(Memory)
-	err = json.NewDecoder(f).Decode(mem)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(mem.Concepts) != len(self.Concepts) || len(mem.Connects) != len(self.Connects) {
-		log.Fatalf("save error")
-	}
 	// rename
 	filePath := filepath.Join(rootPath, "db.json")
 	err = os.Rename(tmpPath, filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("saved in %v.\n", time.Now().Sub(t0))
 }
 
 func (self *Memory) Load() {
