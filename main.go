@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -46,6 +47,14 @@ func init() {
 }
 
 func main() {
+	// lock
+	ln, err := net.Listen("tcp", "127.0.0.1:61297")
+	if err != nil {
+		fmt.Printf("lock failed.\n")
+		return
+	}
+	defer ln.Close()
+
 	mem := &Memory{
 		Concepts: make(map[string]*Concept),
 		Connects: make(map[string]*Connect),
