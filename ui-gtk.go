@@ -25,7 +25,7 @@ GtkWindow {
 	font-size: 16px;
 }
 #text {
-	font-size: 64px;
+	font-size: 48px;
 	color: #0099CC;
 }
 ]]))
