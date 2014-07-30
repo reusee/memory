@@ -13,13 +13,24 @@ func ui_gtk(connects []*Connect, mem *Memory) {
 	// ui
 	keys := make(chan rune)
 	g, err := lgtk.New(`
+Gdk = lgi.Gdk
+
 css = Gtk.CssProvider.get_default()
 print(css:load_from_data([[
 GtkWindow {
 	background-color: black;
 	color: white;
 }
+#hint {
+	font-size: 16px;
+}
+#text {
+	font-size: 64px;
+	color: #0099CC;
+}
 ]]))
+Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, 999)
+
 win = Gtk.Window{
 	Gtk.Grid{
 		orientation = 'VERTICAL',
@@ -28,24 +39,17 @@ win = Gtk.Window{
 		},
 		Gtk.Label{
 			id = 'hint',
+			name = 'hint',
 		},
 		Gtk.Label{
 			id = 'text',
+			name = 'text',
 		},
 		Gtk.Label{
 			expand = true,
 		},
 	},
 }
-win:get_style_context():add_provider(css, 999)
-css = Gtk.CssProvider{}
-css:load_from_data([[
-* {
-	font-size: 64px;
-	color: #0099CC;
-}
-]])
-win.child.text:get_style_context():add_provider(css, 999)
 function win:on_key_press_event(ev)
 	Key(ev.keyval)
 	return true
