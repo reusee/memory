@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -69,15 +68,12 @@ win:show_all()
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	setHint := func(s string) {
-		g.Exec(func() {
-			g.Eval(fmt.Sprintf(`win.child.hint:set_label("%s")`, s))
-		})
+		g.ExecEval(`win.child.hint:set_label(T)`, "T", s)
 	}
 	setText := func(s string) {
-		g.Exec(func() {
-			g.Eval(fmt.Sprintf(`win.child.text:set_label("%s")`, s))
-		})
+		g.ExecEval(`win.child.text:set_label(T)`, "T", s)
 	}
 
 	setHint("press f to start")
