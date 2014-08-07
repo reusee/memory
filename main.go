@@ -33,7 +33,7 @@ func init() {
 
 	rand.Seed(time.Now().UnixNano())
 
-	base := 2.09
+	base := 2.2
 	var total time.Duration
 	for i := 0.0; i < 12; i++ {
 		t := time.Duration(float64(time.Hour*24) * math.Pow(base, i))

@@ -15,7 +15,7 @@ func ui_gtk(connects []*Connect, mem *Memory) {
 Gdk = lgi.Gdk
 
 css = Gtk.CssProvider.get_default()
-print(css:load_from_data([[
+css:load_from_data([[
 GtkWindow {
 	background-color: black;
 	color: white;
@@ -27,7 +27,7 @@ GtkWindow {
 	font-size: 48px;
 	color: #0099CC;
 }
-]]))
+]])
 Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, 999)
 
 win = Gtk.Window{
