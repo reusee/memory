@@ -45,7 +45,7 @@ func (self *Memory) NextSerial() int {
 }
 
 func (self *Memory) Save() {
-	t0 := time.Now()
+	//t0 := time.Now()
 	self.saveLock.Lock()
 	defer self.saveLock.Unlock()
 	// encode
@@ -77,7 +77,7 @@ func (self *Memory) Save() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("saved in %v.\n", time.Now().Sub(t0))
+	//fmt.Printf("saved in %v.\n", time.Now().Sub(t0))
 }
 
 func (self *Memory) Load() {
