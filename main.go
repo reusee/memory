@@ -16,8 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	//pyqt "github.com/reusee/go-pyqt5"
 )
 
 var rootPath string
@@ -82,7 +80,7 @@ func main() {
 	} else {
 		cmd = os.Args[1]
 	}
-	max := 20
+	max := 22
 	if len(os.Args) == 2 && regexp.MustCompile(`[0-9]+`).MatchString(os.Args[1]) {
 		max, _ = strconv.Atoi(os.Args[1])
 		cmd = "train"

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"strconv"
 	"sync"
 	"time"
 
@@ -27,6 +28,9 @@ GtkWindow {
 	font-size: 48px;
 	color: #0099CC;
 }
+#level {
+	color: grey;
+}
 ]])
 Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, 999)
 
@@ -47,8 +51,13 @@ win = Gtk.Window{
 		Gtk.Label{
 			expand = true,
 		},
+		Gtk.Label{
+			id = 'level',
+			name = 'level',
+		},
 	},
 }
+
 function win:on_key_press_event(ev)
 	Key(ev.keyval)
 	return true
@@ -57,6 +66,7 @@ function win.on_destroy()
 	Exit(0)
 end
 win:show_all()
+
 	`,
 		"Key", func(val rune) {
 			select {
@@ -74,6 +84,9 @@ win:show_all()
 	}
 	setText := func(s string) {
 		g.ExecEval(`win.child.text:set_label(T)`, "T", s)
+	}
+	setLevel := func(s string) {
+		g.ExecEval(`win.child.level:set_label(T)`, "T", s)
 	}
 
 	setHint("press f to start")
@@ -95,12 +108,16 @@ win:show_all()
 	}
 
 	// train
+loop:
 	for _, connect := range connects {
 		setHint("")
 		setText("")
 
 		from := mem.Concepts[connect.From]
 		to := mem.Concepts[connect.To]
+		lastHistory := connect.Histories[len(connect.Histories)-1]
+		setLevel(strconv.Itoa(lastHistory.Level))
+
 		switch from.What {
 
 		case AUDIO: // play audio
@@ -117,7 +134,6 @@ win:show_all()
 			key := <-keys
 			switch key {
 			case 'g':
-				lastHistory := connect.Histories[len(connect.Histories)-1]
 				connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 				save()
 			case 't':
@@ -128,6 +144,10 @@ win:show_all()
 				from.Play()
 				setHint("")
 				goto repeat
+			case 'q':
+				setText("")
+				setHint("exit...")
+				break loop
 			default:
 				goto read_key
 			}
@@ -144,7 +164,6 @@ win:show_all()
 			key := <-keys
 			switch key {
 			case 'g':
-				lastHistory := connect.Histories[len(connect.Histories)-1]
 				connect.Histories = append(connect.Histories, History{Level: lastHistory.Level + 1, Time: time.Now()})
 				save()
 			case 't':
@@ -152,6 +171,10 @@ win:show_all()
 				save()
 			case ' ':
 				goto repeat2
+			case 'q':
+				setText("")
+				setHint("exit...")
+				break loop
 			default:
 				goto read_key2
 			}
